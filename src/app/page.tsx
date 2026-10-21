@@ -1,10 +1,10 @@
 export default function HomePage() {
   return (
-    <main className="mx-auto max-w-3xl px-4 py-16">
-      <h1 className="text-3xl font-bold tracking-tight text-primary">
-        Buscador turístico del Valle del Cauca
+    <>
+      <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+        Lugares poco conocidos del Valle del Cauca
       </h1>
-      <p className="mt-3 text-muted">Próximamente: lugares poco conocidos para explorar.</p>
-    </main>
+      <p className="mt-2 text-muted">Próximamente: cascadas, senderos, miradores y ríos.</p>
+    </>
   );
 }

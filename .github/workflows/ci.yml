@@ -1,7 +1,9 @@
 name: CI
 
+# Feature branches are checked through their pull request; main is checked after each merge.
 on:
   push:
+    branches: [main]
   pull_request:
 
 permissions:
