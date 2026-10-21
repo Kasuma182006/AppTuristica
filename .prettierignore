@@ -5,6 +5,7 @@ build
 coverage
 package-lock.json
 next-env.d.ts
+db/migrations
 docs
 CLAUDE.md
 AGENTS.md

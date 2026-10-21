@@ -67,8 +67,10 @@ Las páginas no consultan la base directamente: usan los services de `modules/`,
 - Si algo de la historia es ambiguo o contradice este archivo, preguntar antes de implementar.
 
 ## Comandos (se completan al crearlos)
-Disponibles (`npm run <cmd>`): `dev` · `build` · `lint` · `typecheck` · `format` · `format:check`
-Pendientes: `test` · `db:generate` · `db:migrate` · `db:seed` · `ingest`
+Disponibles (`npm run <cmd>`): `dev` · `build` · `lint` · `typecheck` · `format` · `format:check` ·
+`db:generate` (migración desde `db/schema`) · `db:migrate` (aplica `db/migrations`) · `db:studio`
+Pendientes: `test` · `db:seed` · `ingest`
+SQL que Drizzle no genera (extensiones, funciones): `npx drizzle-kit generate --custom --name=<nombre>`.
 
 ## Fuera del MVP
 Cuentas, favoritos, reseñas, búsqueda por texto o semántica, filtros por distancia, filtro "Ideal para",
