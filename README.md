@@ -26,4 +26,11 @@ npm run db:studio    # explorador visual de la base (Drizzle Studio)
 
 Las credenciales van en `.env.local` (ver `.env.example`).
 
+## Integración continua
+
+GitHub Actions (`.github/workflows/ci.yml`) ejecuta en cada push y pull request: lint, formato,
+tipos, pruebas, build y `npm audit --omit=dev`. Las alertas que solo afectan dependencias de
+desarrollo (por ejemplo `braces`, vía `eslint-config-next`) están aceptadas mientras no exista
+versión corregida.
+
 Ver `CLAUDE.md` para arquitectura y reglas, y `docs/` para requerimientos e historias.
