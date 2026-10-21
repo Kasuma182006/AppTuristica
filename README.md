@@ -5,7 +5,8 @@ Web y API pública para encontrar lugares turísticos poco conocidos de Colombia
 ## Requisitos
 
 - Node.js 24 o superior (ver `.nvmrc`)
-- VS Code con las extensiones recomendadas (ESLint y Prettier; VS Code las sugiere al abrir el proyecto)
+- VS Code con las extensiones ESLint (`dbaeumer.vscode-eslint`), Prettier (`esbenp.prettier-vscode`)
+  y Tailwind CSS IntelliSense (`bradlc.vscode-tailwindcss`). La carpeta `.vscode/` no se versiona.
 
 ## Comandos
 
