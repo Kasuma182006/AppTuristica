@@ -27,6 +27,16 @@ npm run db:studio    # explorador visual de la base (Drizzle Studio)
 
 Las credenciales van en `.env.local` (ver `.env.example`).
 
+## Despliegue
+
+Vercel (plan Hobby) conectado al repositorio de GitHub:
+
+- Push a `main` → producción en https://app-turistica.vercel.app
+- Push a cualquier otra rama → vista previa (protegida con inicio de sesión de Vercel)
+- Variables de entorno en el panel de Vercel (Production y Preview): `DATABASE_URL`.
+  Las migraciones se aplican desde local con `npm run db:migrate`.
+- Vercel no espera a la CI: subir a `main` solo con la CI en verde.
+
 ## Integración continua
 
 GitHub Actions (`.github/workflows/ci.yml`) ejecuta en cada push y pull request: lint, formato,
