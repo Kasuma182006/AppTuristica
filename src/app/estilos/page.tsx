@@ -15,7 +15,7 @@ const swatches = [
 
 export default function StyleGuidePage() {
   return (
-    <main className="mx-auto max-w-3xl space-y-10 px-4 py-10">
+    <div className="max-w-3xl space-y-10">
       <header className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">Guía de estilos</h1>
         <p className="text-muted">Tokens de color y tipografía del buscador turístico.</p>
@@ -80,6 +80,6 @@ export default function StyleGuidePage() {
           </a>
         </article>
       </section>
-    </main>
+    </div>
   );
 }
