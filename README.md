@@ -4,7 +4,7 @@ Web y API pública para encontrar lugares turísticos poco conocidos de Colombia
 
 ## Requisitos
 
-- Node.js 20.12 o superior
+- Node.js 24 o superior (ver `.nvmrc`)
 - VS Code con las extensiones recomendadas (ESLint y Prettier; VS Code las sugiere al abrir el proyecto)
 
 ## Comandos
@@ -17,6 +17,8 @@ npm run lint         # ESLint
 npm run typecheck    # TypeScript sin emitir
 npm run format       # formatea con Prettier
 npm run format:check # verifica formato
+npm test             # ejecuta las pruebas (Vitest)
+npm run test:watch   # pruebas en modo observación
 npm run db:generate  # genera una migración a partir de db/schema
 npm run db:migrate   # aplica las migraciones pendientes en Supabase
 npm run db:studio    # explorador visual de la base (Drizzle Studio)
