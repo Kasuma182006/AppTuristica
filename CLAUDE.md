@@ -66,6 +66,16 @@ Las páginas no consultan la base directamente: usan los services de `modules/`,
 - No implementar nada de "Fuera del MVP" sin que se pida.
 - Si algo de la historia es ambiguo o contradice este archivo, preguntar antes de implementar.
 
+## Flujo Git y despliegue (Vercel)
+- `main` está protegida: sin push directo. Cada HU va en una rama `feat/hu-xx-...` → PR → CI y check `Vercel`
+  en verde → "Squash and merge" con título `feat(HU-xx): ...` → `git switch main && git pull`.
+- Vercel despliega solo: PR/rama → vista previa (requiere login de Vercel; usa la misma base que producción);
+  merge a `main` → producción en https://app-turistica.vercel.app. Vercel no espera a la CI.
+- **Tras cada merge, verificar que producción cambió.** En HU-08 el aviso de GitHub a Vercel se perdió y no hubo
+  despliegue (ni siquiera aparecía en Vercel). Solución: Vercel → Deployments → **Create Deployment** con `main`.
+  No usar "Redeploy" (republica el commit viejo). Si se repite, revisar acceso de la app de Vercel en GitHub.
+- Estado de despliegue: status `Vercel` en `/commits/<sha>/status` de la API de GitHub (sin `gh`; límite 60 req/h).
+
 ## Comandos (se completan al crearlos)
 Disponibles (`npm run <cmd>`): `dev` · `build` · `lint` · `typecheck` · `format` · `format:check` ·
 `test` (Vitest, una vez) · `test:watch` ·
