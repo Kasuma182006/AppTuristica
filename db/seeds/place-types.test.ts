@@ -4,7 +4,7 @@ import { classifyByOsmTags, osmTagSelectorsSchema } from "@/modules/catalogs/osm
 import { PLACE_TYPES } from "./place-types";
 
 describe("place type seed configuration", () => {
-  it("has the eight MVP types in order", () => {
+  it("has the MVP types in order", () => {
     expect(PLACE_TYPES.map((t) => t.name)).toEqual([
       "Cascada",
       "Río",
@@ -14,6 +14,7 @@ describe("place type seed configuration", () => {
       "Lago o laguna",
       "Reserva natural",
       "Balneario",
+      "Playa",
     ]);
   });
 
@@ -46,6 +47,9 @@ describe("place type seed configuration", () => {
     [{ natural: "water", water: "reservoir", name: "Lago Calima" }, "lago"],
     [{ boundary: "protected_area", protect_class: "2" }, "reserva-natural"],
     [{ leisure: "swimming_area" }, "balneario"],
+    [{ natural: "beach", name: "Playa de Ladrilleros" }, "playa"],
+    // A beach also tagged as a swimming area: balneario comes first in priority.
+    [{ natural: "beach", leisure: "swimming_area" }, "balneario"],
   ])("classifies %j as %s", (tags, slug) => {
     expect(classifyByOsmTags(tags, PLACE_TYPES)?.slug).toBe(slug);
   });

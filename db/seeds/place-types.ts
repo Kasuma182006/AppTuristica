@@ -59,6 +59,12 @@ export const PLACE_TYPES: readonly PlaceTypeSource[] = [
     name: "Balneario",
     osmTags: [{ leisure: "swimming_area" }, { leisure: "bathing_place" }],
   },
+  {
+    // Not in the HU-11 list; added at the user's request for Pacific beaches (Juanchaco, Ladrilleros).
+    slug: "playa",
+    name: "Playa",
+    osmTags: [{ natural: "beach" }],
+  },
 ];
 
 /** Upserts every place type by slug, keeping list order as `sort_order`. Safe to run repeatedly. */
