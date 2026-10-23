@@ -23,9 +23,22 @@ npm run test:watch   # pruebas en modo observación
 npm run db:generate  # genera una migración a partir de db/schema
 npm run db:migrate   # aplica las migraciones pendientes en Supabase
 npm run db:studio    # explorador visual de la base (Drizzle Studio)
+npm run db:seed      # carga los catálogos (departamentos…); se puede repetir sin duplicar
+npm run db:fetch-boundary -- 76  # descarga de OSM el límite de un departamento (código DIVIPOLA)
 ```
 
 Las credenciales van en `.env.local` (ver `.env.example`).
+
+## Datos de referencia
+
+Los departamentos en alcance se configuran en `db/seeds/departments.ts`. Su polígono se guarda en
+`db/seeds/data/departments/<divipola>.geojson`, descargado una sola vez de OpenStreetMap (vía
+Nominatim) con `db:fetch-boundary`, que verifica la etiqueta `divipola` de la relación. Para
+agregar un departamento: añadir la entrada, descargar el límite y correr `db:seed`.
+Datos © OpenStreetMap contributors, bajo licencia ODbL.
+
+Todas las tablas tienen RLS activado y sin políticas: la app accede con Drizzle desde el servidor, y
+la Data API pública de Supabase queda bloqueada.
 
 ## Despliegue
 

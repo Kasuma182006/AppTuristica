@@ -79,8 +79,10 @@ Las páginas no consultan la base directamente: usan los services de `modules/`,
 ## Comandos (se completan al crearlos)
 Disponibles (`npm run <cmd>`): `dev` · `build` · `lint` · `typecheck` · `format` · `format:check` ·
 `test` (Vitest, una vez) · `test:watch` ·
-`db:generate` (migración desde `db/schema`) · `db:migrate` (aplica `db/migrations`) · `db:studio`
-Pendientes: `db:seed` · `ingest`
+`db:generate` (migración desde `db/schema`) · `db:migrate` (aplica `db/migrations`) · `db:studio` ·
+`db:seed` (catálogos desde `db/seeds`, idempotente) · `db:fetch-boundary -- <divipola>` (baja un límite de OSM)
+Pendientes: `ingest`
+Scripts fuera de Next.js (seed, ingesta) se ejecutan con `tsx`. Toda tabla nueva lleva `.enableRLS()` (lo verifica una prueba).
 Pruebas: archivos `*.test.ts` junto al código en `src/`, `db/` o `ingest/`. Node 24 (`.nvmrc`).
 SQL que Drizzle no genera (extensiones, funciones): `npx drizzle-kit generate --custom --name=<nombre>`.
 
