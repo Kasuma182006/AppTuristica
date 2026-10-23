@@ -42,6 +42,10 @@ departamento. Para agregar un departamento: añadir las entradas, descargar los 
 Los tipos de lugar (cascada, río, mirador…) y sus etiquetas de OSM están en
 `db/seeds/place-types.ts`. El orden de la lista es el de la interfaz y también la prioridad cuando un
 elemento de OSM encaja en varios tipos.
+
+Las actividades y sus reglas de asignación automática (por tipo de lugar o por etiquetas de OSM)
+están en `db/seeds/activities.ts`. Las reglas son conservadoras: una actividad equivocada confunde
+al visitante; una que falte la puede agregar la comunidad.
 Datos © OpenStreetMap contributors, bajo licencia ODbL.
 
 Todas las tablas tienen RLS activado y sin políticas: la app accede con Drizzle desde el servidor, y

@@ -4,3 +4,4 @@
 export * from "./departments";
 export * from "./municipalities";
 export * from "./place-types";
+export * from "./activities";

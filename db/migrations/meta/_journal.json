@@ -29,6 +29,13 @@
       "when": 1792769482962,
       "tag": "0003_create_place_types",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792771240118,
+      "tag": "0004_create_activities",
+      "breakpoints": true
     }
   ]
 }
