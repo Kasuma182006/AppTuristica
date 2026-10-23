@@ -6,6 +6,7 @@ import * as schema from "@db/schema";
 import { formatSeedResult } from "./common";
 import { seedDepartments } from "./departments";
 import { seedMunicipalities } from "./municipalities";
+import { seedPlaceTypes } from "./place-types";
 
 // Like drizzle.config.ts: load .env.local locally; CI injects env vars.
 if (existsSync(".env.local")) process.loadEnvFile(".env.local");
@@ -21,6 +22,7 @@ async function main(): Promise<void> {
     const results = await db.transaction(async (tx) => ({
       departments: await seedDepartments(tx),
       municipalities: await seedMunicipalities(tx),
+      placeTypes: await seedPlaceTypes(tx),
     }));
     for (const [label, result] of Object.entries(results)) {
       console.log(formatSeedResult(label, result));
