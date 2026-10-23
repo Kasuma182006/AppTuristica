@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  index,
   integer,
   pgEnum,
   pgTable,
@@ -61,5 +62,11 @@ export const places = pgTable(
     check("places_description_not_blank", sql`btrim(${t.description}) <> ''`),
     check("places_altitude_range", sql`${t.altitudeM} BETWEEN -500 AND 9000`),
     check("places_confidence_range", sql`${t.confidence} BETWEEN 0 AND 100`),
+    // Filtered columns (HU-19, RNF-03): spatial queries (map bounds, ingest dedup by distance)
+    // and the "Lugar" and "Tipo" filters; status is in every public query (hidden sites never show).
+    index("places_location_idx").using("gist", t.location),
+    index("places_municipality_id_idx").on(t.municipalityId),
+    index("places_place_type_id_idx").on(t.placeTypeId),
+    index("places_status_idx").on(t.status),
   ],
 ).enableRLS();

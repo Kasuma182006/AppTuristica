@@ -85,6 +85,13 @@
       "when": 1792781416867,
       "tag": "0011_create_reports_and_ingest_runs",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792782648771,
+      "tag": "0012_add_filter_indexes",
+      "breakpoints": true
     }
   ]
 }

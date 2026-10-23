@@ -1,4 +1,4 @@
-import { integer, pgTable, primaryKey, smallint } from "drizzle-orm/pg-core";
+import { index, integer, pgTable, primaryKey, smallint } from "drizzle-orm/pg-core";
 import { activities } from "./activities";
 import { places } from "./places";
 
@@ -15,5 +15,9 @@ export const placeActivities = pgTable(
       .notNull()
       .references(() => activities.id, { onDelete: "restrict" }),
   },
-  (t) => [primaryKey({ columns: [t.placeId, t.activityId] })],
+  (t) => [
+    primaryKey({ columns: [t.placeId, t.activityId] }),
+    // The key leads with place_id; the "Actividad" filter looks sites up by activity (HU-19).
+    index("place_activities_activity_id_idx").on(t.activityId),
+  ],
 ).enableRLS();
