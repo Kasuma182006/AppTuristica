@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { areaGeometrySchema, buildBoundaryFile, toMultiPolygon } from "./boundary";
+import {
+  areaGeometrySchema,
+  buildBoundaryCollection,
+  buildBoundaryFeature,
+  toMultiPolygon,
+} from "./boundary";
 
 const square: [number, number][][] = [
   [
@@ -12,30 +17,34 @@ const square: [number, number][][] = [
 ];
 
 const valle = { code: "76", name: "Valle del Cauca", osmRelationId: 1322825 };
+const cali = { code: "76001", name: "Cali", osmRelationId: 1320707 };
+const aguila = { code: "76243", name: "El Águila", osmRelationId: 1473586 };
 
-function nominatimResponse(overrides: {
+function nominatimFeature(overrides: {
   osmId?: number;
+  name?: string;
   extratags?: Record<string, string> | null;
   geometry?: unknown;
 }) {
   return {
-    type: "FeatureCollection",
-    licence: "Data © OpenStreetMap contributors, ODbL 1.0.",
-    features: [
-      {
-        type: "Feature",
-        properties: {
-          osm_type: "relation",
-          osm_id: overrides.osmId ?? 1322825,
-          name: "Valle del Cauca",
-          extratags: overrides.extratags === undefined ? { divipola: "76" } : overrides.extratags,
-        },
-        geometry: overrides.geometry ?? { type: "Polygon", coordinates: square },
-      },
-    ],
+    type: "Feature",
+    properties: {
+      osm_type: "relation",
+      osm_id: overrides.osmId ?? valle.osmRelationId,
+      name: overrides.name ?? valle.name,
+      extratags: overrides.extratags === undefined ? { divipola: "76" } : overrides.extratags,
+    },
+    geometry: overrides.geometry ?? { type: "Polygon", coordinates: square },
   };
 }
 
+function nominatimResponse(...features: ReturnType<typeof nominatimFeature>[]) {
+  return {
+    type: "FeatureCollection",
+    licence: "Data © OpenStreetMap contributors, ODbL 1.0.",
+    features,
+  };
+}
 describe("areaGeometrySchema", () => {
   it("accepts polygons and multipolygons", () => {
     expect(areaGeometrySchema.safeParse({ type: "Polygon", coordinates: square }).success).toBe(
@@ -94,12 +103,16 @@ describe("toMultiPolygon", () => {
   });
 });
 
-describe("buildBoundaryFile", () => {
+describe("buildBoundaryFeature", () => {
   const retrievedAt = new Date("2026-10-23T14:00:00Z");
 
-  it("builds a file with provenance and a multipolygon geometry", () => {
-    const file = buildBoundaryFile(valle, nominatimResponse({}), retrievedAt);
-    expect(file.properties).toEqual({
+  it("builds a feature with provenance and a multipolygon geometry", () => {
+    const feature = buildBoundaryFeature(
+      valle,
+      nominatimResponse(nominatimFeature({})),
+      retrievedAt,
+    );
+    expect(feature.properties).toEqual({
       code: "76",
       name: "Valle del Cauca",
       source: "OpenStreetMap",
@@ -108,36 +121,95 @@ describe("buildBoundaryFile", () => {
       attribution: "© OpenStreetMap contributors",
       retrievedAt: "2026-10-23",
     });
-    expect(file.geometry).toEqual({ type: "MultiPolygon", coordinates: [square] });
+    expect(feature.geometry).toEqual({ type: "MultiPolygon", coordinates: [square] });
   });
 
   it("rejects a relation whose DIVIPOLA code does not match", () => {
-    expect(() =>
-      buildBoundaryFile(valle, nominatimResponse({ extratags: { divipola: "19" } }), retrievedAt),
-    ).toThrow(/divipola=19, expected 76/);
+    const response = nominatimResponse(nominatimFeature({ extratags: { divipola: "19" } }));
+    expect(() => buildBoundaryFeature(valle, response, retrievedAt)).toThrow(
+      /divipola=19, expected 76/,
+    );
   });
 
-  it("rejects a relation without DIVIPOLA code", () => {
-    expect(() =>
-      buildBoundaryFile(valle, nominatimResponse({ extratags: null }), retrievedAt),
-    ).toThrow(/divipola=\(missing\)/);
+  it("accepts a relation without DIVIPOLA code when the name matches (ignoring accents)", () => {
+    const response = nominatimResponse(
+      nominatimFeature({ osmId: aguila.osmRelationId, name: "El Aguila", extratags: null }),
+    );
+    expect(buildBoundaryFeature(aguila, response, retrievedAt).properties.name).toBe("El Águila");
+  });
+
+  it("rejects a relation without DIVIPOLA code whose name differs", () => {
+    const response = nominatimResponse(nominatimFeature({ name: "Cauca", extratags: {} }));
+    expect(() => buildBoundaryFeature(valle, response, retrievedAt)).toThrow(
+      /no divipola tag and its name "Cauca" is not "Valle del Cauca"/,
+    );
   });
 
   it("rejects a different OSM relation", () => {
-    expect(() => buildBoundaryFile(valle, nominatimResponse({ osmId: 42 }), retrievedAt)).toThrow(
+    const response = nominatimResponse(nominatimFeature({ osmId: 42 }));
+    expect(() => buildBoundaryFeature(valle, response, retrievedAt)).toThrow(
       /Expected OSM relation 1322825, got 42/,
     );
   });
 
   it("rejects a non-area geometry (unclosed relation)", () => {
     const point = { type: "Point", coordinates: [-76.5, 3.4] };
-    expect(() =>
-      buildBoundaryFile(valle, nominatimResponse({ geometry: point }), retrievedAt),
-    ).toThrow();
+    const response = nominatimResponse(nominatimFeature({ geometry: point }));
+    expect(() => buildBoundaryFeature(valle, response, retrievedAt)).toThrow();
   });
 
   it("rejects responses with no or several features", () => {
-    const empty = { type: "FeatureCollection", features: [] };
-    expect(() => buildBoundaryFile(valle, empty, retrievedAt)).toThrow();
+    expect(() => buildBoundaryFeature(valle, nominatimResponse(), retrievedAt)).toThrow(
+      /exactly one OSM relation, got 0/,
+    );
+    const two = nominatimResponse(nominatimFeature({}), nominatimFeature({}));
+    expect(() => buildBoundaryFeature(valle, two, retrievedAt)).toThrow(/got 2/);
+  });
+});
+
+describe("buildBoundaryCollection", () => {
+  const retrievedAt = new Date("2026-10-23T14:00:00Z");
+  const caliFeature = nominatimFeature({
+    osmId: cali.osmRelationId,
+    name: "Cali",
+    extratags: { divipola: "76001" },
+  });
+  const aguilaFeature = nominatimFeature({
+    osmId: aguila.osmRelationId,
+    name: "El Águila",
+    extratags: { divipola: "76243" },
+  });
+
+  it("merges several responses in the order of the sources", () => {
+    const collection = buildBoundaryCollection(
+      [cali, aguila],
+      [nominatimResponse(aguilaFeature), nominatimResponse(caliFeature)],
+      retrievedAt,
+    );
+    expect(collection.type).toBe("FeatureCollection");
+    expect(collection.features.map((f) => f.properties.code)).toEqual(["76001", "76243"]);
+  });
+
+  it("rejects missing relations", () => {
+    expect(() =>
+      buildBoundaryCollection([cali, aguila], [nominatimResponse(caliFeature)], retrievedAt),
+    ).toThrow(/no area for 76243/);
+  });
+
+  it("rejects unexpected relations", () => {
+    expect(() =>
+      buildBoundaryCollection([cali], [nominatimResponse(caliFeature, aguilaFeature)], retrievedAt),
+    ).toThrow(/Unexpected OSM relations: 1473586/);
+  });
+
+  it("checks the identity of every relation", () => {
+    const wrongCode = nominatimFeature({
+      osmId: cali.osmRelationId,
+      name: "Cali",
+      extratags: { divipola: "76002" },
+    });
+    expect(() =>
+      buildBoundaryCollection([cali], [nominatimResponse(wrongCode)], retrievedAt),
+    ).toThrow(/divipola=76002, expected 76001/);
   });
 });

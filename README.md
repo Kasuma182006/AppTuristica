@@ -31,10 +31,13 @@ Las credenciales van en `.env.local` (ver `.env.example`).
 
 ## Datos de referencia
 
-Los departamentos en alcance se configuran en `db/seeds/departments.ts`. Su polígono se guarda en
-`db/seeds/data/departments/<divipola>.geojson`, descargado una sola vez de OpenStreetMap (vía
-Nominatim) con `db:fetch-boundary`, que verifica la etiqueta `divipola` de la relación. Para
-agregar un departamento: añadir la entrada, descargar el límite y correr `db:seed`.
+Los departamentos en alcance se configuran en `db/seeds/departments.ts` y sus municipios (código
+DIVIPOLA del DANE, nombre común y relación de OSM) en `db/seeds/municipalities.ts`. Los polígonos se
+guardan en `db/seeds/data/{departments,municipalities}/<divipola>.geojson`, descargados una sola vez
+de OpenStreetMap (vía Nominatim) con `db:fetch-boundary`, que verifica la etiqueta `divipola` de cada
+relación (o su nombre, si no la tiene). El seed comprueba que cada municipio quede dentro de su
+departamento. Para agregar un departamento: añadir las entradas, descargar los límites y correr
+`db:seed`.
 Datos © OpenStreetMap contributors, bajo licencia ODbL.
 
 Todas las tablas tienen RLS activado y sin políticas: la app accede con Drizzle desde el servidor, y
