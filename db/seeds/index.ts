@@ -4,6 +4,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "@db/schema";
 import { formatSeedResult } from "./common";
+import { seedActivities } from "./activities";
 import { seedDepartments } from "./departments";
 import { seedMunicipalities } from "./municipalities";
 import { seedPlaceTypes } from "./place-types";
@@ -23,6 +24,7 @@ async function main(): Promise<void> {
       departments: await seedDepartments(tx),
       municipalities: await seedMunicipalities(tx),
       placeTypes: await seedPlaceTypes(tx),
+      activities: await seedActivities(tx),
     }));
     for (const [label, result] of Object.entries(results)) {
       console.log(formatSeedResult(label, result));
