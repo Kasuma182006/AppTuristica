@@ -36,6 +36,20 @@
       "when": 1792771240118,
       "tag": "0004_create_activities",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792772972424,
+      "tag": "0005_create_places",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792772975994,
+      "tag": "0006_place_location_in_municipality",
+      "breakpoints": true
     }
   ]
 }
