@@ -10,3 +10,5 @@ export * from "./place-activities";
 export * from "./photos";
 export * from "./place-sources";
 export * from "./agencies";
+export * from "./reports";
+export * from "./ingest-runs";
