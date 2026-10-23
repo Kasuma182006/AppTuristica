@@ -8,6 +8,13 @@
       "when": 1792539727533,
       "tag": "0000_enable_postgis",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792765325806,
+      "tag": "0001_create_departments",
+      "breakpoints": true
     }
   ]
 }
