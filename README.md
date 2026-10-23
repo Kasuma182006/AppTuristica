@@ -38,6 +38,10 @@ de OpenStreetMap (vía Nominatim) con `db:fetch-boundary`, que verifica la etiqu
 relación (o su nombre, si no la tiene). El seed comprueba que cada municipio quede dentro de su
 departamento. Para agregar un departamento: añadir las entradas, descargar los límites y correr
 `db:seed`.
+
+Los tipos de lugar (cascada, río, mirador…) y sus etiquetas de OSM están en
+`db/seeds/place-types.ts`. El orden de la lista es el de la interfaz y también la prioridad cuando un
+elemento de OSM encaja en varios tipos.
 Datos © OpenStreetMap contributors, bajo licencia ODbL.
 
 Todas las tablas tienen RLS activado y sin políticas: la app accede con Drizzle desde el servidor, y

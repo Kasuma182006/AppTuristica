@@ -3,3 +3,4 @@
 // Drizzle, so RLS without policies only blocks Supabase's public Data API.
 export * from "./departments";
 export * from "./municipalities";
+export * from "./place-types";
