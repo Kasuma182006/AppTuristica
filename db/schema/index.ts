@@ -7,3 +7,4 @@ export * from "./place-types";
 export * from "./activities";
 export * from "./places";
 export * from "./place-activities";
+export * from "./photos";

@@ -57,6 +57,13 @@
       "when": 1792773957719,
       "tag": "0007_create_place_activities",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792775146825,
+      "tag": "0008_create_photos",
+      "breakpoints": true
     }
   ]
 }
