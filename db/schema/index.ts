@@ -8,3 +8,4 @@ export * from "./activities";
 export * from "./places";
 export * from "./place-activities";
 export * from "./photos";
+export * from "./place-sources";
