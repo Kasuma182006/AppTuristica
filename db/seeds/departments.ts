@@ -1,23 +1,21 @@
 import { readFile } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
 import { sql } from "drizzle-orm";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import * as schema from "@db/schema";
 import { departments } from "@db/schema";
-import { boundaryFileSchema, type BoundaryFile, type BoundarySource } from "./boundary";
+import { boundaryFeatureSchema, type BoundaryFeature, type BoundarySource } from "./boundary";
+import {
+  boundaryPath,
+  emptySeedResult,
+  recordUpsert,
+  type SeedDb,
+  type SeedResult,
+} from "./common";
 import { multiPolygonFromGeoJson } from "./geometry";
 
-// Departments in scope (RNF-08): adding one means a new entry here plus its boundary file,
-// downloaded with `npm run db:fetch-boundary -- <code>`.
+// Departments in scope (RNF-08): adding one means a new entry here, its municipalities in
+// municipalities.ts and its boundary files, downloaded with `npm run db:fetch-boundary -- <code>`.
 export const DEPARTMENTS: readonly BoundarySource[] = [
   { code: "76", name: "Valle del Cauca", osmRelationId: 1322825 },
 ];
-
-const DATA_DIR = new URL("./data/departments/", import.meta.url);
-
-export function boundaryFilePath(code: string): string {
-  return fileURLToPath(new URL(`${code}.geojson`, DATA_DIR));
-}
 
 export function findDepartment(code: string): BoundarySource {
   const department = DEPARTMENTS.find((d) => d.code === code);
@@ -29,38 +27,32 @@ export function findDepartment(code: string): BoundarySource {
 }
 
 /** Reads and validates a committed boundary file, checking it belongs to the given department. */
-export async function loadBoundaryFile(department: BoundarySource): Promise<BoundaryFile> {
-  const raw: unknown = JSON.parse(await readFile(boundaryFilePath(department.code), "utf8"));
-  const file = boundaryFileSchema.parse(raw);
-  const { code, osmRelationId } = file.properties;
+export async function loadDepartmentBoundary(department: BoundarySource): Promise<BoundaryFeature> {
+  const raw: unknown = JSON.parse(
+    await readFile(boundaryPath("departments", department.code), "utf8"),
+  );
+  const feature = boundaryFeatureSchema.parse(raw);
+  const { code, osmRelationId } = feature.properties;
   if (code !== department.code || osmRelationId !== department.osmRelationId) {
     throw new Error(
       `Boundary file for ${department.code} describes ${code} (OSM relation ${osmRelationId})`,
     );
   }
-  return file;
-}
-
-export type SeedDb = PostgresJsDatabase<typeof schema>;
-
-export interface SeedResult {
-  inserted: string[];
-  updated: string[];
-  unchanged: string[];
+  return feature;
 }
 
 /** Upserts every configured department by DIVIPOLA code. Safe to run repeatedly. */
 export async function seedDepartments(db: SeedDb): Promise<SeedResult> {
-  const result: SeedResult = { inserted: [], updated: [], unchanged: [] };
+  const result = emptySeedResult();
 
   for (const department of DEPARTMENTS) {
-    const file = await loadBoundaryFile(department);
+    const feature = await loadDepartmentBoundary(department);
     const rows = await db
       .insert(departments)
       .values({
         code: department.code,
         name: department.name,
-        geom: multiPolygonFromGeoJson(file.geometry),
+        geom: multiPolygonFromGeoJson(feature.geometry),
       })
       .onConflictDoUpdate({
         target: departments.code,
@@ -72,10 +64,7 @@ export async function seedDepartments(db: SeedDb): Promise<SeedResult> {
       // xmax = 0 only on freshly inserted rows (a Postgres system column).
       .returning({ inserted: sql<boolean>`(xmax = 0)` });
 
-    const row = rows[0];
-    if (!row) result.unchanged.push(department.code);
-    else if (row.inserted) result.inserted.push(department.code);
-    else result.updated.push(department.code);
+    recordUpsert(result, department.code, rows);
   }
 
   return result;

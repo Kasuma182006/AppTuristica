@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEPARTMENTS, findDepartment, loadBoundaryFile } from "./departments";
+import { DEPARTMENTS, findDepartment, loadDepartmentBoundary } from "./departments";
 
 describe("department seed configuration", () => {
   it("includes Valle del Cauca (MVP scope)", () => {
@@ -23,14 +23,14 @@ describe("department seed configuration", () => {
   it.each(DEPARTMENTS.map((d) => [d.code, d] as const))(
     "has a valid committed boundary file for %s",
     async (_code, department) => {
-      const file = await loadBoundaryFile(department);
+      const file = await loadDepartmentBoundary(department);
       expect(file.properties.code).toBe(department.code);
       expect(file.geometry.coordinates.length).toBeGreaterThan(0);
     },
   );
 
   it("keeps the Valle boundary at full resolution", async () => {
-    const file = await loadBoundaryFile(findDepartment("76"));
+    const file = await loadDepartmentBoundary(findDepartment("76"));
     const positions = file.geometry.coordinates.flat(2).length;
     expect(positions).toBeGreaterThan(20_000);
   });

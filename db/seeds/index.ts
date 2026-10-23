@@ -3,7 +3,9 @@ import { existsSync } from "node:fs";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "@db/schema";
+import { formatSeedResult } from "./common";
 import { seedDepartments } from "./departments";
+import { seedMunicipalities } from "./municipalities";
 
 // Like drizzle.config.ts: load .env.local locally; CI injects env vars.
 if (existsSync(".env.local")) process.loadEnvFile(".env.local");
@@ -15,11 +17,14 @@ async function main(): Promise<void> {
   const client = postgres(url, { max: 1, onnotice: () => {} });
   try {
     const db = drizzle(client, { schema });
-    const departments = await seedDepartments(db);
-    console.log(
-      `departments: ${departments.inserted.length} inserted, ` +
-        `${departments.updated.length} updated, ${departments.unchanged.length} unchanged`,
-    );
+    // One transaction: a failed check (e.g. a municipality outside its department) changes nothing.
+    const results = await db.transaction(async (tx) => ({
+      departments: await seedDepartments(tx),
+      municipalities: await seedMunicipalities(tx),
+    }));
+    for (const [label, result] of Object.entries(results)) {
+      console.log(formatSeedResult(label, result));
+    }
   } finally {
     await client.end();
   }

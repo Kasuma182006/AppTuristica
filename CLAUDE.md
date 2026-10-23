@@ -82,7 +82,8 @@ Disponibles (`npm run <cmd>`): `dev` · `build` · `lint` · `typecheck` · `for
 `db:generate` (migración desde `db/schema`) · `db:migrate` (aplica `db/migrations`) · `db:studio` ·
 `db:seed` (catálogos desde `db/seeds`, idempotente) · `db:fetch-boundary -- <divipola>` (baja un límite de OSM)
 Pendientes: `ingest`
-Scripts fuera de Next.js (seed, ingesta) se ejecutan con `tsx`. Toda tabla nueva lleva `.enableRLS()` (lo verifica una prueba).
+Scripts fuera de Next.js (seed, ingesta) se ejecutan con `tsx`. En código, "Lugar" (municipio) es
+`municipalities`; `places` son los sitios turísticos. Toda tabla nueva lleva `.enableRLS()` (lo verifica una prueba).
 Pruebas: archivos `*.test.ts` junto al código en `src/`, `db/` o `ingest/`. Node 24 (`.nvmrc`).
 SQL que Drizzle no genera (extensiones, funciones): `npx drizzle-kit generate --custom --name=<nombre>`.
 
