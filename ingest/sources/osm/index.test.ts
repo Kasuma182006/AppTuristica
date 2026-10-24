@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CandidatePlace } from "../../pipeline/types";
-import { summarizeNormalization } from ".";
+import { summarizeLocation, summarizeNormalization } from ".";
 
 function candidate(placeTypeSlug: string, name: string | null, segments: number): CandidatePlace {
   return {
@@ -42,5 +42,23 @@ describe("summarizeNormalization", () => {
     expect(summarizeNormalization([], [])).toBe(
       "0 candidates (0 named rivers from 0 segments); 0 discarded",
     );
+  });
+});
+
+describe("summarizeLocation", () => {
+  it("counts sites, named river sites and those without municipality", () => {
+    const located = (slug: string, name: string | null, municipalityId: number | null) => ({
+      ...candidate(slug, name, 1),
+      point: null,
+      municipalityId,
+    });
+    expect(
+      summarizeLocation([
+        located("rio", "Río Cauca", 1),
+        located("rio", "Río Cauca", 2),
+        located("rio", "Río Cauca", null),
+        located("cascada", "La Chorrera", 3),
+      ]),
+    ).toBe("4 sites after municipality assignment (2 named river sites; 1 without municipality)");
   });
 });

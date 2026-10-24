@@ -1,6 +1,7 @@
 import { DEPARTMENTS } from "@db/seeds/departments";
 import { loadCatalog } from "../../catalog";
-import type { CandidatePlace, DiscardedElement } from "../../pipeline/types";
+import { assignMunicipalities } from "../../pipeline/municipality";
+import type { CandidatePlace, DiscardedElement, LocatedCandidate } from "../../pipeline/types";
 import type { IngestSource } from "../types";
 import { normalizeOsmElement } from "./normalize";
 import { parseOverpassEndpoints, queryOverpass } from "./overpass";
@@ -26,8 +27,19 @@ export function summarizeNormalization(
   );
 }
 
-// Tourist sites from OpenStreetMap, for every department in scope. Municipality assignment and
-// the rest of the pipeline arrive in HU-23 onwards.
+export function summarizeLocation(sites: readonly LocatedCandidate[]): string {
+  const withoutMunicipality = sites.filter((s) => s.municipalityId === null).length;
+  const riverSites = sites.filter(
+    (s) => s.placeTypeSlug === RIVER_TYPE_SLUG && s.name !== null && s.municipalityId !== null,
+  ).length;
+  return (
+    `${sites.length} sites after municipality assignment ` +
+    `(${riverSites} named river sites; ${withoutMunicipality} without municipality)`
+  );
+}
+
+// Tourist sites from OpenStreetMap, for every department in scope. Validation and the rest of
+// the pipeline arrive in HU-24 onwards.
 export const osmSource: IngestSource = {
   name: "osm",
   description: "sitios de OpenStreetMap",
@@ -48,5 +60,8 @@ export const osmSource: IngestSource = {
       catalog.activityRules.map((rule) => rule.slug),
     );
     console.log(`osm: ${summarizeNormalization(candidates, discarded)}`);
+
+    const sites = await assignMunicipalities(db, candidates);
+    console.log(`osm: ${summarizeLocation(sites)}`);
   },
 };

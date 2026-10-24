@@ -34,6 +34,14 @@ export interface CandidatePlace {
   elements: SourceElement[];
 }
 
+/** A candidate after municipality assignment (HU-23): one municipality, one point. */
+export interface LocatedCandidate extends CandidatePlace {
+  /** The element point that represents the site; null when no element has one. */
+  point: Point | null;
+  /** Municipality whose polygon covers the point; null when none does (discarded in HU-24). */
+  municipalityId: number | null;
+}
+
 export type DiscardReason = "canal" | "duplicate-river-relation";
 
 export interface DiscardedElement {
