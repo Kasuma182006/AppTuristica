@@ -1,11 +1,13 @@
 import { DEPARTMENTS } from "@db/seeds/departments";
 import { loadCatalog } from "../../catalog";
 import { assignMunicipalities } from "../../pipeline/municipality";
-import type { CandidatePlace, LocatedCandidate } from "../../pipeline/types";
+import { applyRestrictions, findPointsInAreas } from "../../pipeline/restrictions";
+import type { CandidatePlace, LocatedCandidate, RestrictedSite } from "../../pipeline/types";
 import { discardInvalid, formatDiscarded, summarizeDiscarded } from "../../pipeline/validate";
 import type { IngestSource } from "../types";
 import { normalizeOsmElement } from "./normalize";
-import { parseOverpassEndpoints, queryOverpass } from "./overpass";
+import { parseOverpassEndpoints, queryOverpass, queryOverpassWith } from "./overpass";
+import { buildProtectedAreasQuery, isProtectedArea, parseProtectedAreas } from "./protected-areas";
 import { areaIdForRelation, buildOverpassQuery } from "./query";
 import { groupRiverSegments, RIVER_TYPE_SLUG } from "./rivers";
 
@@ -30,8 +32,14 @@ export function summarizeLocation(sites: readonly LocatedCandidate[]): string {
   );
 }
 
-// Tourist sites from OpenStreetMap, for every department in scope. Access restrictions and the
-// rest of the pipeline arrive in HU-25 onwards.
+export function summarizeRestrictions(sites: readonly RestrictedSite[]): string {
+  const fragile = sites.filter((s) => s.inProtectedArea).length;
+  const privateProperty = sites.filter((s) => s.privateProperty).length;
+  return `${fragile} in protected areas (fragile), ${privateProperty} private property`;
+}
+
+// Tourist sites from OpenStreetMap, for every department in scope. Deduplication and the rest of
+// the pipeline arrive in HU-26 onwards.
 export const osmSource: IngestSource = {
   name: "osm",
   description: "sitios de OpenStreetMap",
@@ -41,11 +49,18 @@ export const osmSource: IngestSource = {
     const areaIds = DEPARTMENTS.map((d) => areaIdForRelation(d.osmRelationId));
     const query = buildOverpassQuery(selectors, areaIds, QUERY_TIMEOUT_SECONDS);
 
-    const elements = await queryOverpass(query, {
+    const overpass = {
       endpoints: parseOverpassEndpoints(process.env.OVERPASS_URLS),
       requestTimeoutMs: REQUEST_TIMEOUT_MS,
-    });
+    };
+    const elements = await queryOverpass(query, overpass);
     console.log(`osm: fetched ${elements.length} elements`);
+    const protectedAreas = await queryOverpassWith(
+      buildProtectedAreasQuery(areaIds, QUERY_TIMEOUT_SECONDS),
+      overpass,
+      parseProtectedAreas,
+    );
+    console.log(`osm: fetched ${protectedAreas.length} protected areas`);
 
     const grouped = groupRiverSegments(
       elements.map((element) => normalizeOsmElement(element, catalog)),
@@ -62,5 +77,15 @@ export const osmSource: IngestSource = {
       `osm: ${valid.length} valid sites; ${discarded.length} discarded (${summarizeDiscarded(discarded)})`,
     );
     for (const item of discarded) console.log(`osm: discarded ${formatDiscarded(item)}`);
+
+    const inside = await findPointsInAreas(
+      db,
+      protectedAreas,
+      valid.map((site) => site.point),
+    );
+    const restricted = valid.map((site, i) =>
+      applyRestrictions(site, inside[i] ?? false, isProtectedArea),
+    );
+    console.log(`osm: ${summarizeRestrictions(restricted)}`);
   },
 };

@@ -23,13 +23,14 @@ export function selectorFilter(selector: OsmTagSelector): string {
 
 /**
  * Builds the Overpass QL query for every element (node, way or relation) matching any selector
- * inside the given areas. Ways and relations come with their center only (`out tags center`):
- * a site is stored as a point.
+ * inside the given areas. By default ways and relations come with their center only
+ * (`out tags center`): a site is stored as a point. `geom` returns full geometries instead.
  */
 export function buildOverpassQuery(
   selectors: readonly OsmTagSelector[],
   areaIds: readonly number[],
   timeoutSeconds: number,
+  output: "tags center" | "geom" = "tags center",
 ): string {
   if (selectors.length === 0) throw new Error("No OSM tag selectors to query");
   if (areaIds.length === 0) throw new Error("No areas to query");
@@ -41,6 +42,6 @@ export function buildOverpassQuery(
     "(",
     ...filters.map((filter) => `  nwr${filter}(area.scope);`),
     ");",
-    "out tags center;",
+    `out ${output};`,
   ].join("\n");
 }

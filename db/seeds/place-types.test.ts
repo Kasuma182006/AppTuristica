@@ -46,6 +46,7 @@ describe("place type seed configuration", () => {
     [{ highway: "path", sac_scale: "mountain_hiking" }, "sendero"],
     [{ natural: "water", water: "reservoir", name: "Lago Calima" }, "lago"],
     [{ boundary: "protected_area", protect_class: "2" }, "reserva-natural"],
+    [{ boundary: "national_park", name: "Parque Nacional Natural Tatamá" }, "reserva-natural"],
     [{ leisure: "swimming_area" }, "balneario"],
     [{ natural: "beach", name: "Playa de Ladrilleros" }, "playa"],
     // A beach also tagged as a swimming area: balneario comes first in priority.

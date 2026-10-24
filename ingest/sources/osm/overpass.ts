@@ -26,10 +26,17 @@ export function parseOverpassEndpoints(value: string | undefined): string[] {
     .parse(urls);
 }
 
-const coordinates = z.object({
+export const coordinates = z.object({
   lat: z.number().min(-90).max(90),
   lon: z.number().min(-180).max(180),
 });
+
+/** Overpass reports a failed query (e.g. timeout) in `remark`; its elements are then incomplete. */
+export function assertQueryCompleted(remark: string | undefined): void {
+  if (remark !== undefined && /error/i.test(remark)) {
+    throw new Error(`Overpass query failed: ${remark}`);
+  }
+}
 const tags = z.record(z.string(), z.string()).optional();
 const id = z.number().int().positive();
 
@@ -42,7 +49,6 @@ const overpassElementSchema = z.discriminatedUnion("type", [
 
 const overpassResponseSchema = z.object({
   elements: z.array(overpassElementSchema),
-  // Set when the query failed mid-way (e.g. timeout): the elements are then incomplete.
   remark: z.string().optional(),
 });
 
@@ -57,9 +63,7 @@ export interface OsmElement {
 /** Validates an Overpass JSON response. Throws if it is malformed or reports a query error. */
 export function parseOverpassResponse(body: unknown): OsmElement[] {
   const response = overpassResponseSchema.parse(body);
-  if (response.remark !== undefined && /error/i.test(response.remark)) {
-    throw new Error(`Overpass query failed: ${response.remark}`);
-  }
+  assertQueryCompleted(response.remark);
   return response.elements.map((element) => ({
     type: element.type,
     id: element.id,
@@ -81,12 +85,14 @@ export interface OverpassOptions {
 
 /** How a failed attempt is handled: retry the same endpoint, or move on to the next one. */
 type Failure = { kind: "retry" | "next-endpoint"; message: string };
+type Attempt<T> = { kind: "ok"; value: T } | Failure;
 
-async function attempt(
+async function attempt<T>(
   endpoint: string,
   query: string,
+  parse: (body: unknown) => T,
   options: Required<Pick<OverpassOptions, "fetch" | "requestTimeoutMs">>,
-): Promise<OsmElement[] | Failure> {
+): Promise<Attempt<T>> {
   let response: Response;
   try {
     response = await options.fetch(endpoint, {
@@ -116,22 +122,29 @@ async function attempt(
   }
 
   try {
-    return parseOverpassResponse(await response.json());
+    return { kind: "ok", value: parse(await response.json()) };
   } catch (error) {
     // Truncated bodies, HTML error pages with status 200, or a timeout reported in `remark`.
     return { kind: "retry", message: `invalid response: ${errorMessage(error)}` };
   }
 }
 
+/** Runs a query whose results are elements with tags and a point (`out tags center`). */
+export function queryOverpass(query: string, options: OverpassOptions): Promise<OsmElement[]> {
+  return queryOverpassWith(query, options, parseOverpassResponse);
+}
+
 /**
- * Runs an Overpass query, trying each endpoint in order. Network errors, 429, 5xx and invalid
- * responses are retried on the same endpoint after each delay; 403/406 skip to the next endpoint.
- * Throws once every endpoint has failed, or right away if the query itself is rejected (4xx).
+ * Runs an Overpass query, trying each endpoint in order, and parses the JSON body with `parse`
+ * (a throw means an invalid response). Network errors, 429, 5xx and invalid responses are retried
+ * on the same endpoint after each delay; 403/406 skip to the next endpoint. Throws once every
+ * endpoint has failed, or right away if the query itself is rejected (4xx).
  */
-export async function queryOverpass(
+export async function queryOverpassWith<T>(
   query: string,
   options: OverpassOptions,
-): Promise<OsmElement[]> {
+  parse: (body: unknown) => T,
+): Promise<T> {
   const delays = options.retryDelaysMs ?? DEFAULT_RETRY_DELAYS_MS;
   const doFetch = options.fetch ?? fetch;
   const wait = options.sleep ?? sleep;
@@ -140,11 +153,11 @@ export async function queryOverpass(
 
   for (const endpoint of options.endpoints) {
     for (let retry = 0; ; retry++) {
-      const result = await attempt(endpoint, query, {
+      const result = await attempt(endpoint, query, parse, {
         fetch: doFetch,
         requestTimeoutMs: options.requestTimeoutMs,
       });
-      if (Array.isArray(result)) return result;
+      if (result.kind === "ok") return result.value;
 
       const delay = delays[retry];
       if (result.kind === "next-endpoint" || delay === undefined) {

@@ -52,7 +52,12 @@ export const PLACE_TYPES: readonly PlaceTypeSource[] = [
   {
     slug: "reserva-natural",
     name: "Reserva natural",
-    osmTags: [{ leisure: "nature_reserve" }, { boundary: "protected_area" }],
+    // National parks (Farallones, Tatamá, Las Hermosas) are tagged boundary=national_park.
+    osmTags: [
+      { leisure: "nature_reserve" },
+      { boundary: "protected_area" },
+      { boundary: "national_park" },
+    ],
   },
   {
     slug: "balneario",
