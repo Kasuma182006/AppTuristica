@@ -77,6 +77,12 @@ export function externalIdOf(element: Pick<OsmElement, "type" | "id">): string {
   return `${element.type}/${element.id}`;
 }
 
+/** The Wikidata item id in `wikidata` ("Q123"); null when missing or malformed. */
+export function wikidataIdFromTags(tags: OsmTags): string | null {
+  const id = tags.wikidata?.trim().toUpperCase();
+  return id !== undefined && /^Q[1-9][0-9]*$/.test(id) ? id : null;
+}
+
 /** Converts one OSM element into a candidate site, classified with the catalog's rules. */
 export function normalizeOsmElement(element: OsmElement, catalog: Catalog): CandidatePlace {
   const { tags } = element;
@@ -89,6 +95,7 @@ export function normalizeOsmElement(element: OsmElement, catalog: Catalog): Cand
     cost: costFromFee(tags.fee),
     activitySlugs:
       placeTypeSlug === null ? [] : deriveActivities(placeTypeSlug, tags, catalog.activityRules),
+    wikidataId: wikidataIdFromTags(tags),
     elements: [{ externalId: externalIdOf(element), point: element.point, tags }],
   };
 }

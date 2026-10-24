@@ -8,6 +8,7 @@ import {
   difficultyFromSacScale,
   nameFromTags,
   normalizeOsmElement,
+  wikidataIdFromTags,
 } from "./normalize";
 import type { OsmElement } from "./overpass";
 
@@ -127,6 +128,7 @@ describe("normalizeOsmElement", () => {
       altitudeM: 2100,
       cost: "free",
       activitySlugs: ["senderismo"],
+      wikidataId: null,
       elements: [
         {
           externalId: "way/77",
@@ -177,5 +179,18 @@ describe("normalizeOsmElement", () => {
     );
     expect(candidate.placeTypeSlug).toBeNull();
     expect(candidate.activitySlugs).toEqual([]);
+  });
+});
+
+describe("wikidataIdFromTags", () => {
+  it("reads a valid item id", () => {
+    expect(wikidataIdFromTags({ wikidata: "Q3216251" })).toBe("Q3216251");
+    expect(wikidataIdFromTags({ wikidata: " q853332 " })).toBe("Q853332");
+  });
+
+  it("ignores missing or malformed values", () => {
+    expect(wikidataIdFromTags({})).toBeNull();
+    expect(wikidataIdFromTags({ wikidata: "Q1;Q2" })).toBeNull();
+    expect(wikidataIdFromTags({ wikidata: "Laguna de Sonso" })).toBeNull();
   });
 });

@@ -31,6 +31,8 @@ export interface CandidatePlace {
   cost: Cost | null;
   /** In display order. */
   activitySlugs: string[];
+  /** Wikidata item linked from OSM (`wikidata=Q…`), enriched in HU-27. */
+  wikidataId: string | null;
   /** Usually one; a river has one per segment until HU-23 splits it by municipality. */
   elements: SourceElement[];
 }
@@ -57,6 +59,20 @@ export interface RestrictedSite extends ValidSite {
   privateProperty: boolean;
   /** Fragile sites never expose their exact location (CLAUDE.md). */
   sensitivity: Sensitivity;
+}
+
+/** Data taken from the site's Wikidata item (HU-27), all in Spanish. */
+export interface WikidataInfo {
+  id: string;
+  /** Wikidata's short description (CC0), or null when it has none in Spanish. */
+  description: string | null;
+  /** Spanish Wikipedia article, or null when there is none. */
+  wikipediaUrl: string | null;
+}
+
+/** A deduplicated site with its Wikidata data (null when OSM links no existing item). */
+export interface EnrichedSite extends RestrictedSite {
+  wikidata: WikidataInfo | null;
 }
 
 export type DiscardReason =

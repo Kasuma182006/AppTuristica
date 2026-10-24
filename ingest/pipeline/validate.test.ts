@@ -16,6 +16,7 @@ function site(overrides: Partial<LocatedCandidate> = {}): LocatedCandidate {
     altitudeM: null,
     cost: null,
     activitySlugs: [],
+    wikidataId: null,
     elements: [{ externalId: "node/1", point: { lat: 3.4, lon: -76.6 }, tags: {} }],
     point: { lat: 3.4, lon: -76.6 },
     municipalityId: 7,

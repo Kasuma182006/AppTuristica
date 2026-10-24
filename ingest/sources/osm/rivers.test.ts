@@ -12,6 +12,7 @@ function candidate(externalId: string, overrides: Partial<CandidatePlace> = {}):
     altitudeM: null,
     cost: null,
     activitySlugs: [],
+    wikidataId: null,
     elements: [{ externalId, point: { lat: 3.3, lon: -76.6 }, tags: { waterway: "river" } }],
     ...overrides,
   };
@@ -114,5 +115,33 @@ describe("groupRiverSegments", () => {
       ACTIVITY_ORDER,
     ).candidates;
     expect(river?.name).toBe("Río Pance");
+  });
+});
+
+describe("groupRiverSegments and Wikidata", () => {
+  it("passes a dropped relation's item to the river of the same name", () => {
+    const { candidates } = groupRiverSegments(
+      [
+        candidate("relation/7913248", { name: "Río Cauca", wikidataId: "Q853332" }),
+        candidate("way/1", { name: "Río Cauca" }),
+        candidate("way/2", { name: "Rio Cauca" }),
+        candidate("relation/19270561", { name: "La Vieja River", wikidataId: "Q3458666" }),
+        candidate("way/3", { name: "Río La Vieja" }),
+      ],
+      ACTIVITY_ORDER,
+    );
+    expect(candidates.map((c) => [c.name, c.wikidataId])).toEqual([
+      ["Río Cauca", "Q853332"],
+      // Different name: the relation's item does not pass.
+      ["Río La Vieja", null],
+    ]);
+  });
+
+  it("prefers an item on the segments themselves", () => {
+    const [river] = groupRiverSegments(
+      [candidate("relation/9", { wikidataId: "Q1" }), candidate("way/1", { wikidataId: "Q2" })],
+      ACTIVITY_ORDER,
+    ).candidates;
+    expect(river?.wikidataId).toBe("Q2");
   });
 });
