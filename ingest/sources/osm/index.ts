@@ -1,7 +1,8 @@
 import { DEPARTMENTS } from "@db/seeds/departments";
 import { loadCatalog } from "../../catalog";
+import { deduplicate, formatMerge } from "../../pipeline/dedup";
 import { assignMunicipalities } from "../../pipeline/municipality";
-import { applyRestrictions, findPointsInAreas } from "../../pipeline/restrictions";
+import { applyRestrictions, findContainingAreas } from "../../pipeline/restrictions";
 import type { CandidatePlace, LocatedCandidate, RestrictedSite } from "../../pipeline/types";
 import { discardInvalid, formatDiscarded, summarizeDiscarded } from "../../pipeline/validate";
 import type { IngestSource } from "../types";
@@ -38,8 +39,8 @@ export function summarizeRestrictions(sites: readonly RestrictedSite[]): string 
   return `${fragile} in protected areas (fragile), ${privateProperty} private property`;
 }
 
-// Tourist sites from OpenStreetMap, for every department in scope. Deduplication and the rest of
-// the pipeline arrive in HU-26 onwards.
+// Tourist sites from OpenStreetMap, for every department in scope. Wikidata enrichment and the
+// rest of the pipeline arrive in HU-27 onwards.
 export const osmSource: IngestSource = {
   name: "osm",
   description: "sitios de OpenStreetMap",
@@ -78,14 +79,26 @@ export const osmSource: IngestSource = {
     );
     for (const item of discarded) console.log(`osm: discarded ${formatDiscarded(item)}`);
 
-    const inside = await findPointsInAreas(
-      db,
-      protectedAreas,
-      valid.map((site) => site.point),
-    );
+    const containing = (
+      await findContainingAreas(
+        db,
+        protectedAreas,
+        valid.map((site) => site.point),
+      )
+    ).map((indexes) => indexes.flatMap((i) => protectedAreas[i]?.externalId ?? []));
     const restricted = valid.map((site, i) =>
-      applyRestrictions(site, inside[i] ?? false, isProtectedArea),
+      applyRestrictions(site, (containing[i] ?? []).length > 0, isProtectedArea),
     );
     console.log(`osm: ${summarizeRestrictions(restricted)}`);
+
+    const deduplicated = deduplicate(restricted, {
+      activityOrder: catalog.activityRules.map((rule) => rule.slug),
+      containingAreas: containing,
+    });
+    console.log(
+      `osm: ${deduplicated.sites.length} sites after deduplication ` +
+        `(${deduplicated.merges.length} merges)`,
+    );
+    for (const merge of deduplicated.merges) console.log(`osm: merged ${formatMerge(merge)}`);
   },
 };

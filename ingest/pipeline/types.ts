@@ -65,6 +65,8 @@ export type DiscardReason =
   | "river-relation"
   // Minimum fields and location (HU-24).
   | "no-name"
+  // Infrastructure named like a tourist site (HU-26), e.g. a landfill's ponds.
+  | "not-tourist"
   | "no-type"
   | "no-point"
   | "outside-area";

@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { Discarded, LocatedCandidate } from "./types";
-import { discardInvalid, discardReasonOf, formatDiscarded, summarizeDiscarded } from "./validate";
+import {
+  discardInvalid,
+  discardReasonOf,
+  formatDiscarded,
+  isNonTouristName,
+  summarizeDiscarded,
+} from "./validate";
 
 function site(overrides: Partial<LocatedCandidate> = {}): LocatedCandidate {
   return {
@@ -99,5 +105,30 @@ describe("summarizeDiscarded", () => {
       ]),
     ).toBe("no-name: 3, canal: 1, outside-area: 1");
     expect(summarizeDiscarded([])).toBe("");
+  });
+});
+
+describe("isNonTouristName", () => {
+  it.each([
+    "Piscina de Lixiviados",
+    "planta de tratamiento agua manga vieja",
+    "Laguna de Oxidación",
+    "Relleno Sanitario Colomba",
+    "PTAR Cañaveralejo",
+  ])("flags %s", (name) => {
+    expect(isNonTouristName(name)).toBe(true);
+  });
+
+  it.each(["Laguna de Sonso", "Lago Calima", "Charco Azul", "Reserva Tratamientos Verdes"])(
+    "keeps %s",
+    (name) => {
+      expect(isNonTouristName(name)).toBe(false);
+    },
+  );
+
+  it("discards infrastructure with the not-tourist reason", () => {
+    expect(discardReasonOf(site({ name: "Piscina de Lixiviados", placeTypeSlug: "lago" }))).toBe(
+      "not-tourist",
+    );
   });
 });

@@ -8,19 +8,23 @@ export interface AreaLines {
   lines: [number, number][][];
 }
 
-const insideRowSchema = z.object({ idx: z.number().int(), inside: z.boolean() });
+const containingRowSchema = z.object({
+  idx: z.number().int(),
+  areas: z.array(z.number().int()),
+});
 
 /**
- * Whether each point lies inside any of the areas (ST_Covers), in input order. ST_BuildArea turns
- * each area's lines (outer and inner rings, in any order) into polygons; unclosed lines are ignored.
+ * Indexes (into `areas`) of the areas covering each point (ST_Covers), in input order. ST_BuildArea
+ * turns each area's lines (outer and inner rings, in any order) into polygons; unclosed lines are
+ * ignored.
  */
-export async function findPointsInAreas(
+export async function findContainingAreas(
   db: IngestDb,
   areas: readonly AreaLines[],
   points: readonly Point[],
-): Promise<boolean[]> {
+): Promise<number[][]> {
   if (points.length === 0) return [];
-  if (areas.length === 0) return points.map(() => false);
+  if (areas.length === 0) return points.map(() => []);
   const geometries = areas.map((a) =>
     JSON.stringify({ type: "MultiLineString", coordinates: a.lines }),
   );
@@ -28,25 +32,27 @@ export async function findPointsInAreas(
   // MATERIALIZED: build each polygon once, not once per point.
   const rows = await db.execute(sql`
     WITH area AS MATERIALIZED (
-      SELECT ST_BuildArea(ST_SetSRID(ST_GeomFromGeoJSON(g.value #>> '{}'), 4326)) AS geom
-      FROM jsonb_array_elements(${JSON.stringify(geometries)}::jsonb) AS g(value)
+      SELECT g.idx::int - 1 AS i,
+        ST_BuildArea(ST_SetSRID(ST_GeomFromGeoJSON(g.value #>> '{}'), 4326)) AS geom
+      FROM jsonb_array_elements(${JSON.stringify(geometries)}::jsonb) WITH ORDINALITY AS g(value, idx)
     )
-    SELECT p.idx::int AS idx, EXISTS (
-      SELECT 1 FROM area
-      WHERE area.geom IS NOT NULL
-        AND ST_Covers(
-          area.geom,
-          ST_SetSRID(ST_MakePoint((p.value->>'lon')::float8, (p.value->>'lat')::float8), 4326)
-        )
-    ) AS inside
+    SELECT p.idx::int AS idx, COALESCE(
+      (SELECT array_agg(area.i ORDER BY area.i) FROM area
+        WHERE area.geom IS NOT NULL
+          AND ST_Covers(
+            area.geom,
+            ST_SetSRID(ST_MakePoint((p.value->>'lon')::float8, (p.value->>'lat')::float8), 4326)
+          )),
+      '{}'
+    ) AS areas
     FROM jsonb_array_elements(${JSON.stringify(points)}::jsonb) WITH ORDINALITY AS p(value, idx)
     ORDER BY p.idx
   `);
-  const parsed = z.array(insideRowSchema).parse([...rows]);
+  const parsed = z.array(containingRowSchema).parse([...rows]);
   if (parsed.length !== points.length) {
     throw new Error(`Area lookup returned ${parsed.length} rows for ${points.length} points`);
   }
-  return parsed.map((row) => row.inside);
+  return parsed.map((row) => row.areas);
 }
 
 /** The element whose point represents the site (see splitByMunicipality); else the first one. */

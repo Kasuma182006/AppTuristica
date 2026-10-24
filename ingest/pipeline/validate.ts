@@ -1,8 +1,27 @@
+import { slugify } from "@/lib/slug";
 import type { Discarded, DiscardReason, LocatedCandidate, ValidSite } from "./types";
+
+// Names of infrastructure that OSM tags like a lake or reservoir (e.g. a landfill's
+// "Piscina de Lixiviados"), as slug fragments. Extend the list when another one shows up.
+const NON_TOURIST_NAME_PARTS: readonly string[] = [
+  "lixiviado",
+  "planta-de-tratamiento",
+  "oxidacion",
+  "relleno-sanitario",
+  "aguas-residuales",
+  "ptar",
+];
+
+/** Whether the name is of infrastructure, not a tourist site. Matches whole slug words. */
+export function isNonTouristName(name: string): boolean {
+  const slug = `-${slugify(name)}-`;
+  return NON_TOURIST_NAME_PARTS.some((part) => new RegExp(`-${part}[a-z]*-`).test(slug));
+}
 
 /** The first missing minimum field, in this order, or null when the site is valid. */
 export function discardReasonOf(site: LocatedCandidate): DiscardReason | null {
   if (site.name === null) return "no-name";
+  if (isNonTouristName(site.name)) return "not-tourist";
   if (site.placeTypeSlug === null) return "no-type";
   if (site.point === null) return "no-point";
   // The 42 municipalities cover exactly the department, so no municipality means outside it.
