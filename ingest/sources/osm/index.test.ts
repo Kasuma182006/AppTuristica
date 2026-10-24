@@ -1,14 +1,46 @@
 import { describe, expect, it } from "vitest";
-import { summarizeElements } from ".";
+import type { CandidatePlace } from "../../pipeline/types";
+import { summarizeNormalization } from ".";
 
-describe("summarizeElements", () => {
-  it("counts elements by type and those without a point", () => {
+function candidate(placeTypeSlug: string, name: string | null, segments: number): CandidatePlace {
+  return {
+    name,
+    placeTypeSlug,
+    difficulty: null,
+    altitudeM: null,
+    cost: null,
+    activitySlugs: [],
+    elements: Array.from({ length: segments }, (_, i) => ({
+      externalId: `way/${i + 1}`,
+      point: null,
+      tags: {},
+    })),
+  };
+}
+
+describe("summarizeNormalization", () => {
+  it("counts candidates, river segments and discards by reason", () => {
     expect(
-      summarizeElements([
-        { type: "node", id: 1, tags: {}, point: { lat: 3, lon: -76 } },
-        { type: "way", id: 2, tags: {}, point: { lat: 3, lon: -76 } },
-        { type: "relation", id: 3, tags: {}, point: null },
-      ]),
-    ).toBe("3 elements (1 nodes, 1 ways, 1 relations; 1 without a point)");
+      summarizeNormalization(
+        [
+          candidate("rio", "Río Cali", 3),
+          candidate("rio", null, 1),
+          candidate("cascada", "La Chorrera", 1),
+        ],
+        [
+          { externalId: "way/8", reason: "canal" },
+          { externalId: "way/9", reason: "canal" },
+          { externalId: "relation/1", reason: "duplicate-river-relation" },
+        ],
+      ),
+    ).toBe(
+      "3 candidates (1 named rivers from 3 segments); 3 discarded (canal: 2, duplicate-river-relation: 1)",
+    );
+  });
+
+  it("omits the reasons when nothing was discarded", () => {
+    expect(summarizeNormalization([], [])).toBe(
+      "0 candidates (0 named rivers from 0 segments); 0 discarded",
+    );
   });
 });
