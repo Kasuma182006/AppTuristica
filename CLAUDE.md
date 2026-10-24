@@ -80,11 +80,13 @@ Las páginas no consultan la base directamente: usan los services de `modules/`,
 Disponibles (`npm run <cmd>`): `dev` · `build` · `lint` · `typecheck` · `format` · `format:check` ·
 `test` (Vitest, una vez) · `test:watch` ·
 `db:generate` (migración desde `db/schema`) · `db:migrate` (aplica `db/migrations`) · `db:studio` ·
-`db:seed` (catálogos desde `db/seeds`, idempotente) · `db:fetch-boundary -- <divipola>` (baja un límite de OSM)
-Pendientes: `ingest`
+`db:seed` (catálogos desde `db/seeds`, idempotente) · `db:fetch-boundary -- <divipola>` (baja un límite de OSM) ·
+`ingest` (todas las fuentes; `-- --source=osm|rnt` para una; si una falla sigue y sale con código 1)
 Scripts fuera de Next.js (seed, ingesta) se ejecutan con `tsx`. En código, "Lugar" (municipio) es
 `municipalities`; `places` son los sitios turísticos. Toda tabla nueva lleva `.enableRLS()` (lo verifica una prueba).
-Pruebas: archivos `*.test.ts` junto al código en `src/`, `db/` o `ingest/`. Node 24 (`.nvmrc`).
+Pruebas: archivos `*.test.ts` junto al código en `src/`, `db/` o `ingest/`. Node 24 (`.nvmrc`; CI y Vercel usan la última 24.x). Local: Node 24.22.1 (parches de
+seguridad, 2026-10-23) con npm 11.19, que avisa de install scripts no aprobados (`esbuild`,
+`unrs-resolver`): es inofensivo, todo funciona sin ellos.
 SQL que Drizzle no genera (extensiones, funciones): `npx drizzle-kit generate --custom --name=<nombre>`.
 
 ## Fuera del MVP
