@@ -16,7 +16,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx db/seeds/index.ts",
-    "db:fetch-boundary": "tsx db/seeds/fetch-boundary.ts"
+    "db:fetch-boundary": "tsx db/seeds/fetch-boundary.ts",
+    "ingest": "tsx ingest/index.ts"
   },
   "engines": {
     "node": ">=24"
