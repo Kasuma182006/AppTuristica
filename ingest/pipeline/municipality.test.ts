@@ -10,6 +10,7 @@ function river(points: (Point | null)[]): CandidatePlace {
     altitudeM: null,
     cost: null,
     activitySlugs: [],
+    wikidataId: null,
     elements: points.map((point, i) => ({ externalId: `way/${i + 1}`, point, tags: {} })),
   };
 }

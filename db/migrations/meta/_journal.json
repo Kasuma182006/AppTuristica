@@ -92,6 +92,13 @@
       "when": 1792782648771,
       "tag": "0012_add_filter_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792879929026,
+      "tag": "0013_add_place_wikidata_fields",
+      "breakpoints": true
     }
   ]
 }

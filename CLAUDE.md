@@ -46,6 +46,8 @@ Las páginas no consultan la base directamente: usan los services de `modules/`,
 ## Legal y datos
 - Solo fuentes abiertas: OpenStreetMap (Overpass), Wikidata, Wikimedia Commons, datos.gov.co (RNT).
 - **Nunca copiar textos ni fotos de terceros.** Descripciones generadas por plantillas; fotos solo de Commons con autor y licencia.
+  Única excepción (HU-27): la descripción corta de Wikidata en español (CC0), guardada aparte
+  (`places.wikidata_description`) y mostrada como de Wikidata, nunca como la descripción del sitio.
 - Atribución "© OpenStreetMap contributors" visible en todo mapa. Datos de la API bajo ODbL.
 - Sin cuentas ni datos personales en el MVP.
 

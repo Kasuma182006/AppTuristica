@@ -16,6 +16,7 @@ function site(externalId: string, overrides: Partial<RestrictedSite> = {}): Rest
     altitudeM: null,
     cost: null,
     activitySlugs: [],
+    wikidataId: null,
     elements: [{ externalId, point, tags: {} }],
     point,
     municipalityId: 1,

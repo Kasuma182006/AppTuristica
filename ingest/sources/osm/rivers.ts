@@ -26,8 +26,9 @@ function mostCommonName(names: readonly string[]): string {
 function mergeSegments(
   segments: readonly CandidatePlace[],
   activityOrder: readonly string[],
+  relationWikidataId: string | null,
 ): CandidatePlace {
-  const firstValue = <K extends "difficulty" | "altitudeM" | "cost">(key: K) =>
+  const firstValue = <K extends "difficulty" | "altitudeM" | "cost" | "wikidataId">(key: K) =>
     segments.map((s) => s[key]).find((value) => value !== null) ?? null;
   const activitySlugs = [...new Set(segments.flatMap((s) => s.activitySlugs))].sort(
     (a, b) => activityOrder.indexOf(a) - activityOrder.indexOf(b),
@@ -39,6 +40,8 @@ function mergeSegments(
     altitudeM: firstValue("altitudeM"),
     cost: firstValue("cost"),
     activitySlugs,
+    // The relation usually holds the river's Wikidata item (e.g. Río Cauca), not its ways.
+    wikidataId: firstValue("wikidataId") ?? relationWikidataId,
     elements: segments.flatMap((s) => s.elements),
   };
 }
@@ -55,8 +58,9 @@ function discard(candidate: CandidatePlace, reason: DiscardReason): Discarded {
  * OSM splits a river into many ways. Joins the named segments of each river (same name, ignoring
  * case and accents) into one candidate that keeps every segment's point, so HU-23 can make one
  * site per river and municipality. River relations are dropped: they repeat their ways and their
- * center does not represent the river. Canals tagged as rivers are dropped too. Unnamed segments
- * stay as they are (HU-24 discards them).
+ * center does not represent the river, though their Wikidata item passes to the river of the same
+ * name. Canals tagged as rivers are dropped too. Unnamed segments stay as they are (HU-24 discards
+ * them).
  */
 export function groupRiverSegments(
   candidates: readonly CandidatePlace[],
@@ -65,12 +69,16 @@ export function groupRiverSegments(
   const result: CandidatePlace[] = [];
   const discarded: Discarded[] = [];
   const rivers = new Map<string, CandidatePlace[]>();
+  const relationWikidata = new Map<string, string>();
 
   for (const candidate of candidates) {
     if (candidate.placeTypeSlug !== RIVER_TYPE_SLUG) {
       result.push(candidate);
     } else if (isRelation(candidate)) {
       discarded.push(discard(candidate, "river-relation"));
+      if (candidate.name !== null && candidate.wikidataId !== null) {
+        relationWikidata.set(slugify(candidate.name), candidate.wikidataId);
+      }
     } else if (candidate.name === null) {
       result.push(candidate);
     } else if (isCanalName(candidate.name)) {
@@ -81,6 +89,8 @@ export function groupRiverSegments(
     }
   }
 
-  for (const segments of rivers.values()) result.push(mergeSegments(segments, activityOrder));
+  for (const [key, segments] of rivers) {
+    result.push(mergeSegments(segments, activityOrder, relationWikidata.get(key) ?? null));
+  }
   return { candidates: result, discarded };
 }

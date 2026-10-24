@@ -13,6 +13,7 @@ function site(overrides: Partial<ValidSite> = {}): ValidSite {
     altitudeM: null,
     cost: null,
     activitySlugs: [],
+    wikidataId: null,
     elements: [
       { externalId: "way/1", point: a, tags: { waterway: "river" } },
       { externalId: "way/2", point: b, tags: { waterway: "river", access: "private" } },

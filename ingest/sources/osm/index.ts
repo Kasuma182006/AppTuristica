@@ -6,6 +6,7 @@ import { applyRestrictions, findContainingAreas } from "../../pipeline/restricti
 import type { CandidatePlace, LocatedCandidate, RestrictedSite } from "../../pipeline/types";
 import { discardInvalid, formatDiscarded, summarizeDiscarded } from "../../pipeline/validate";
 import type { IngestSource } from "../types";
+import { attachWikidata, fetchWikidataItems, summarizeWikidata } from "../wikidata";
 import { normalizeOsmElement } from "./normalize";
 import { parseOverpassEndpoints, queryOverpass, queryOverpassWith } from "./overpass";
 import { buildProtectedAreasQuery, isProtectedArea, parseProtectedAreas } from "./protected-areas";
@@ -39,8 +40,8 @@ export function summarizeRestrictions(sites: readonly RestrictedSite[]): string 
   return `${fragile} in protected areas (fragile), ${privateProperty} private property`;
 }
 
-// Tourist sites from OpenStreetMap, for every department in scope. Wikidata enrichment and the
-// rest of the pipeline arrive in HU-27 onwards.
+// Tourist sites from OpenStreetMap, for every department in scope. Commons photos and the rest
+// of the pipeline arrive in HU-28 onwards.
 export const osmSource: IngestSource = {
   name: "osm",
   description: "sitios de OpenStreetMap",
@@ -100,5 +101,9 @@ export const osmSource: IngestSource = {
         `(${deduplicated.merges.length} merges)`,
     );
     for (const merge of deduplicated.merges) console.log(`osm: merged ${formatMerge(merge)}`);
+
+    const wikidataIds = deduplicated.sites.flatMap((s) => (s.wikidataId ? [s.wikidataId] : []));
+    const enriched = attachWikidata(deduplicated.sites, await fetchWikidataItems(wikidataIds));
+    console.log(`osm: ${summarizeWikidata(enriched)}`);
   },
 };

@@ -10,6 +10,7 @@ function candidate(placeTypeSlug: string, name: string | null, segments: number)
     altitudeM: null,
     cost: null,
     activitySlugs: [],
+    wikidataId: null,
     elements: Array.from({ length: segments }, (_, i) => ({
       externalId: `way/${i + 1}`,
       point: null,

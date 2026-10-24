@@ -65,7 +65,7 @@ function mergeGroup(
 ): RestrictedSite {
   const [kept, ...rest] = [...group].sort(compareForKeeping);
   if (kept === undefined) throw new Error("Cannot merge an empty group");
-  const firstValue = <K extends "difficulty" | "altitudeM" | "cost">(key: K) =>
+  const firstValue = <K extends "difficulty" | "altitudeM" | "cost" | "wikidataId">(key: K) =>
     [kept, ...rest].map((s) => s[key]).find((value) => value !== null) ?? null;
   const inProtectedArea = group.some((s) => s.inProtectedArea);
   return {
@@ -73,6 +73,7 @@ function mergeGroup(
     difficulty: firstValue("difficulty"),
     altitudeM: firstValue("altitudeM"),
     cost: firstValue("cost"),
+    wikidataId: firstValue("wikidataId"),
     activitySlugs: [...new Set(group.flatMap((s) => s.activitySlugs))].sort(
       (a, b) => activityOrder.indexOf(a) - activityOrder.indexOf(b),
     ),

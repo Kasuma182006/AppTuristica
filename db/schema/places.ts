@@ -41,6 +41,11 @@ export const places = pgTable(
     location: point("location").notNull(),
     // Generated from templates or written by the community; never copied from third parties.
     description: text("description"),
+    // Wikidata's short Spanish description (HU-27), shown as such: the one third-party text
+    // allowed, since Wikidata is CC0. Only for sites whose OSM data links a Wikidata item.
+    wikidataDescription: text("wikidata_description"),
+    // Spanish Wikipedia article of the Wikidata item (HU-27).
+    wikipediaUrl: text("wikipedia_url"),
     difficulty: difficultyEnum("difficulty"),
     altitudeM: integer("altitude_m"),
     cost: costEnum("cost"),
@@ -60,6 +65,11 @@ export const places = pgTable(
     check("places_slug_format", sql`${t.slug} ~ '^[a-z0-9]+(-[a-z0-9]+)*$'`),
     check("places_name_not_blank", sql`btrim(${t.name}) <> ''`),
     check("places_description_not_blank", sql`btrim(${t.description}) <> ''`),
+    check("places_wikidata_description_not_blank", sql`btrim(${t.wikidataDescription}) <> ''`),
+    check(
+      "places_wikipedia_url_format",
+      sql`${t.wikipediaUrl} ~ '^https://es\\.wikipedia\\.org/wiki/.+'`,
+    ),
     check("places_altitude_range", sql`${t.altitudeM} BETWEEN -500 AND 9000`),
     check("places_confidence_range", sql`${t.confidence} BETWEEN 0 AND 100`),
     // Filtered columns (HU-19, RNF-03): spatial queries (map bounds, ingest dedup by distance)
