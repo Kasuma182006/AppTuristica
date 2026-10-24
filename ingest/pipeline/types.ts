@@ -1,7 +1,8 @@
-import type { costEnum, difficultyEnum } from "@db/schema";
+import type { costEnum, difficultyEnum, sensitivityEnum } from "@db/schema";
 
 export type Difficulty = (typeof difficultyEnum.enumValues)[number];
 export type Cost = (typeof costEnum.enumValues)[number];
+export type Sensitivity = (typeof sensitivityEnum.enumValues)[number];
 
 export interface Point {
   lat: number;
@@ -48,6 +49,14 @@ export interface ValidSite extends LocatedCandidate {
   placeTypeSlug: string;
   point: Point;
   municipalityId: number;
+}
+
+/** A valid site with its access restrictions (HU-25). */
+export interface RestrictedSite extends ValidSite {
+  inProtectedArea: boolean;
+  privateProperty: boolean;
+  /** Fragile sites never expose their exact location (CLAUDE.md). */
+  sensitivity: Sensitivity;
 }
 
 export type DiscardReason =

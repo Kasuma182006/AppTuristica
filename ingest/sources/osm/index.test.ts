@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CandidatePlace } from "../../pipeline/types";
-import { summarizeLocation, summarizeNormalization } from ".";
+import { summarizeLocation, summarizeNormalization, summarizeRestrictions } from ".";
 
 function candidate(placeTypeSlug: string, name: string | null, segments: number): CandidatePlace {
   return {
@@ -46,5 +46,27 @@ describe("summarizeLocation", () => {
         located("cascada", "La Chorrera", 3),
       ]),
     ).toBe("4 sites after municipality assignment (2 named river sites; 1 without municipality)");
+  });
+});
+
+describe("summarizeRestrictions", () => {
+  it("counts fragile and private sites", () => {
+    const restricted = (inProtectedArea: boolean, privateProperty: boolean) => ({
+      ...candidate("cascada", "La Chorrera", 1),
+      name: "La Chorrera",
+      placeTypeSlug: "cascada",
+      point: { lat: 3, lon: -76 },
+      municipalityId: 1,
+      inProtectedArea,
+      privateProperty,
+      sensitivity: inProtectedArea ? ("fragile" as const) : ("normal" as const),
+    });
+    expect(
+      summarizeRestrictions([
+        restricted(true, false),
+        restricted(true, true),
+        restricted(false, false),
+      ]),
+    ).toBe("2 in protected areas (fragile), 1 private property");
   });
 });

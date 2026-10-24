@@ -54,3 +54,11 @@ describe("buildOverpassQuery", () => {
     expect(() => buildOverpassQuery([{ natural: "peak" }], [], 60)).toThrow("No areas");
   });
 });
+
+describe("buildOverpassQuery output", () => {
+  it("can return full geometries", () => {
+    expect(buildOverpassQuery([{ leisure: "nature_reserve" }], [1], 60, "geom")).toMatch(
+      /out geom;$/,
+    );
+  });
+});

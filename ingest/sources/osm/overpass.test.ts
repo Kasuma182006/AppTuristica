@@ -4,6 +4,7 @@ import {
   parseOverpassEndpoints,
   parseOverpassResponse,
   queryOverpass,
+  queryOverpassWith,
   type OverpassOptions,
 } from "./overpass";
 
@@ -185,5 +186,18 @@ describe("queryOverpass", () => {
     expect(String(request?.body)).toBe(
       new URLSearchParams({ data: "[out:json];node(1);out;" }).toString(),
     );
+  });
+});
+
+describe("queryOverpassWith", () => {
+  it("parses the body with the given parser, retrying when it throws", async () => {
+    const { calls, options } = fakeOverpass([json({ count: "x" }), json({ count: 3 })]);
+    const parse = (body: unknown) => {
+      const count = (body as { count: unknown }).count;
+      if (typeof count !== "number") throw new Error("not a number");
+      return count;
+    };
+    await expect(queryOverpassWith("q", options, parse)).resolves.toBe(3);
+    expect(calls).toEqual([A, A]);
   });
 });
