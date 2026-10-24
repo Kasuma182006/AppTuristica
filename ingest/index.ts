@@ -2,9 +2,14 @@
 // Usage: npm run ingest                    all sources
 //        npm run ingest -- --source=osm    a single source
 // Exits with code 1 if any source failed, after running the rest.
+import { existsSync } from "node:fs";
 import { selectSources } from "./cli";
+import { connectIngestDb } from "./db";
 import { formatOutcome, runSources } from "./run";
 import { sources } from "./sources";
+
+// Like db/seeds: load .env.local locally; GitHub Actions injects env vars.
+if (existsSync(".env.local")) process.loadEnvFile(".env.local");
 
 async function main(): Promise<void> {
   let selected;
@@ -16,7 +21,14 @@ async function main(): Promise<void> {
     process.exitCode = 1;
     return;
   }
-  const outcomes = await runSources(selected);
+
+  const { db, close } = connectIngestDb();
+  let outcomes;
+  try {
+    outcomes = await runSources(selected, { db });
+  } finally {
+    await close();
+  }
 
   for (const outcome of outcomes) {
     if (outcome.ok) console.log(formatOutcome(outcome));

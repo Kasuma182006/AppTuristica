@@ -82,6 +82,8 @@ Disponibles (`npm run <cmd>`): `dev` · `build` · `lint` · `typecheck` · `for
 `db:generate` (migración desde `db/schema`) · `db:migrate` (aplica `db/migrations`) · `db:studio` ·
 `db:seed` (catálogos desde `db/seeds`, idempotente) · `db:fetch-boundary -- <divipola>` (baja un límite de OSM) ·
 `ingest` (todas las fuentes; `-- --source=osm|rnt` para una; si una falla sigue y sale con código 1)
+Overpass: overpass-api.de responde 406 desde la red local; la ingesta pasa sola al respaldo
+(overpass.private.coffee). Servidores configurables con `OVERPASS_URLS`. La consulta del Valle tarda ~1-2 min.
 Scripts fuera de Next.js (seed, ingesta) se ejecutan con `tsx`. En código, "Lugar" (municipio) es
 `municipalities`; `places` son los sitios turísticos. Toda tabla nueva lleva `.enableRLS()` (lo verifica una prueba).
 Pruebas: archivos `*.test.ts` junto al código en `src/`, `db/` o `ingest/`. Node 24 (`.nvmrc`; CI y Vercel usan la última 24.x). Local: Node 24.22.1 (parches de
