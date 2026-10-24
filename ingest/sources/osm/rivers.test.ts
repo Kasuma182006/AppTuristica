@@ -64,20 +64,25 @@ describe("groupRiverSegments", () => {
     });
   });
 
-  it("drops a river relation that duplicates its ways", () => {
+  it("drops every river relation, keeping rivers from their ways", () => {
     const { candidates, discarded } = groupRiverSegments(
-      [candidate("relation/9"), candidate("way/1"), candidate("way/2")],
+      [
+        candidate("relation/9"),
+        candidate("way/1"),
+        candidate("way/2"),
+        // Named differently from its ways ("Río La Vieja"), and without ways at all.
+        candidate("relation/10", { name: "La Vieja River" }),
+        candidate("relation/11", { name: null }),
+      ],
       ACTIVITY_ORDER,
     );
     expect(candidates).toHaveLength(1);
     expect(ids(candidates[0])).toEqual(["way/1", "way/2"]);
-    expect(discarded).toEqual([{ externalId: "relation/9", reason: "duplicate-river-relation" }]);
-  });
-
-  it("keeps a river relation that has no ways", () => {
-    const { candidates, discarded } = groupRiverSegments([candidate("relation/9")], ACTIVITY_ORDER);
-    expect(ids(candidates[0])).toEqual(["relation/9"]);
-    expect(discarded).toEqual([]);
+    expect(discarded).toEqual([
+      { externalIds: ["relation/9"], name: "Río Pance", reason: "river-relation" },
+      { externalIds: ["relation/10"], name: "La Vieja River", reason: "river-relation" },
+      { externalIds: ["relation/11"], name: null, reason: "river-relation" },
+    ]);
   });
 
   it("discards canals tagged as rivers", () => {
@@ -90,8 +95,8 @@ describe("groupRiverSegments", () => {
     );
     expect(candidates).toEqual([]);
     expect(discarded).toEqual([
-      { externalId: "way/1", reason: "canal" },
-      { externalId: "way/2", reason: "canal" },
+      { externalIds: ["way/1"], name: "Canal CVC Sur", reason: "canal" },
+      { externalIds: ["way/2"], name: "Canal CVC Sur", reason: "canal" },
     ]);
   });
 

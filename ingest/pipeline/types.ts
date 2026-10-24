@@ -42,9 +42,27 @@ export interface LocatedCandidate extends CandidatePlace {
   municipalityId: number | null;
 }
 
-export type DiscardReason = "canal" | "duplicate-river-relation";
+/** A located candidate with every minimum field (HU-24), ready for the next pipeline steps. */
+export interface ValidSite extends LocatedCandidate {
+  name: string;
+  placeTypeSlug: string;
+  point: Point;
+  municipalityId: number;
+}
 
-export interface DiscardedElement {
-  externalId: string;
+export type DiscardReason =
+  // OSM data quality (HU-22).
+  | "canal"
+  | "river-relation"
+  // Minimum fields and location (HU-24).
+  | "no-name"
+  | "no-type"
+  | "no-point"
+  | "outside-area";
+
+/** A candidate left out of the run, logged with its reason. */
+export interface Discarded {
+  externalIds: string[];
+  name: string | null;
   reason: DiscardReason;
 }
