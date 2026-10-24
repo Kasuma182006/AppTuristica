@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mostCentralPoint, splitByMunicipality } from "./municipality";
+import { mostCentralPoint, splitByMunicipality, type Location } from "./municipality";
 import type { CandidatePlace, Point } from "./types";
 
 function river(points: (Point | null)[]): CandidatePlace {
@@ -49,14 +49,16 @@ describe("splitByMunicipality", () => {
   const c = { lat: 3.2, lon: -76.5 };
   const d = { lat: 4.0, lon: -76.0 };
 
+  const at = (municipalityId: number, point: Point): Location => ({ municipalityId, point });
+
   it("makes one site per municipality, with its own segments and central point", () => {
     const sites = splitByMunicipality(
       river([a, b, c, d]),
       new Map([
-        ["way/1", 10],
-        ["way/2", 10],
-        ["way/3", 10],
-        ["way/4", 20],
+        ["way/1", at(10, a)],
+        ["way/2", at(10, b)],
+        ["way/3", at(10, c)],
+        ["way/4", at(20, d)],
       ]),
     );
     expect(sites).toHaveLength(2);
@@ -66,16 +68,23 @@ describe("splitByMunicipality", () => {
   });
 
   it("keeps a single-element candidate whole", () => {
-    expect(splitByMunicipality(river([a]), new Map([["way/1", 10]]))).toEqual([
+    expect(splitByMunicipality(river([a]), new Map([["way/1", at(10, a)]]))).toEqual([
       { ...river([a]), point: a, municipalityId: 10 },
     ]);
+  });
+
+  it("uses the point moved inside a municipality near its border", () => {
+    const moved = { lat: 3.0001, lon: -76.5 };
+    const [site] = splitByMunicipality(river([a]), new Map([["way/1", at(10, moved)]]));
+    expect(site).toMatchObject({ point: moved, municipalityId: 10 });
+    expect(site?.elements[0]?.point).toEqual(moved);
   });
 
   it("groups elements outside every municipality or without a point into a site with no municipality", () => {
     const sites = splitByMunicipality(
       river([a, b, null]),
-      new Map<string, number | null>([
-        ["way/1", 10],
+      new Map<string, Location | null>([
+        ["way/1", at(10, a)],
         ["way/2", null],
       ]),
     );

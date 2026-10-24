@@ -1,7 +1,8 @@
 import { DEPARTMENTS } from "@db/seeds/departments";
 import { loadCatalog } from "../../catalog";
 import { assignMunicipalities } from "../../pipeline/municipality";
-import type { CandidatePlace, DiscardedElement, LocatedCandidate } from "../../pipeline/types";
+import type { CandidatePlace, LocatedCandidate } from "../../pipeline/types";
+import { discardInvalid, formatDiscarded, summarizeDiscarded } from "../../pipeline/validate";
 import type { IngestSource } from "../types";
 import { normalizeOsmElement } from "./normalize";
 import { parseOverpassEndpoints, queryOverpass } from "./overpass";
@@ -12,19 +13,10 @@ import { groupRiverSegments, RIVER_TYPE_SLUG } from "./rivers";
 const QUERY_TIMEOUT_SECONDS = 300;
 const REQUEST_TIMEOUT_MS = (QUERY_TIMEOUT_SECONDS + 60) * 1000;
 
-export function summarizeNormalization(
-  candidates: readonly CandidatePlace[],
-  discarded: readonly DiscardedElement[],
-): string {
+export function summarizeNormalization(candidates: readonly CandidatePlace[]): string {
   const rivers = candidates.filter((c) => c.placeTypeSlug === RIVER_TYPE_SLUG && c.name !== null);
   const segments = rivers.reduce((total, river) => total + river.elements.length, 0);
-  const reasons = new Map<string, number>();
-  for (const d of discarded) reasons.set(d.reason, (reasons.get(d.reason) ?? 0) + 1);
-  const discardedText = [...reasons].map(([reason, count]) => `${reason}: ${count}`).join(", ");
-  return (
-    `${candidates.length} candidates (${rivers.length} named rivers from ${segments} segments); ` +
-    `${discarded.length} discarded${discardedText ? ` (${discardedText})` : ""}`
-  );
+  return `${candidates.length} candidates (${rivers.length} named rivers from ${segments} segments)`;
 }
 
 export function summarizeLocation(sites: readonly LocatedCandidate[]): string {
@@ -38,8 +30,8 @@ export function summarizeLocation(sites: readonly LocatedCandidate[]): string {
   );
 }
 
-// Tourist sites from OpenStreetMap, for every department in scope. Validation and the rest of
-// the pipeline arrive in HU-24 onwards.
+// Tourist sites from OpenStreetMap, for every department in scope. Access restrictions and the
+// rest of the pipeline arrive in HU-25 onwards.
 export const osmSource: IngestSource = {
   name: "osm",
   description: "sitios de OpenStreetMap",
@@ -55,13 +47,20 @@ export const osmSource: IngestSource = {
     });
     console.log(`osm: fetched ${elements.length} elements`);
 
-    const { candidates, discarded } = groupRiverSegments(
+    const grouped = groupRiverSegments(
       elements.map((element) => normalizeOsmElement(element, catalog)),
       catalog.activityRules.map((rule) => rule.slug),
     );
-    console.log(`osm: ${summarizeNormalization(candidates, discarded)}`);
+    console.log(`osm: ${summarizeNormalization(grouped.candidates)}`);
 
-    const sites = await assignMunicipalities(db, candidates);
+    const sites = await assignMunicipalities(db, grouped.candidates);
     console.log(`osm: ${summarizeLocation(sites)}`);
+
+    const { valid, discarded: invalid } = discardInvalid(sites);
+    const discarded = [...grouped.discarded, ...invalid];
+    console.log(
+      `osm: ${valid.length} valid sites; ${discarded.length} discarded (${summarizeDiscarded(discarded)})`,
+    );
+    for (const item of discarded) console.log(`osm: discarded ${formatDiscarded(item)}`);
   },
 };

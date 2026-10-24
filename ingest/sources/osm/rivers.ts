@@ -1,5 +1,5 @@
 import { slugify } from "@/lib/slug";
-import type { CandidatePlace, DiscardedElement } from "../../pipeline/types";
+import type { CandidatePlace, Discarded, DiscardReason } from "../../pipeline/types";
 
 // Place type slug of rivers (db/seeds/place-types.ts).
 export const RIVER_TYPE_SLUG = "rio";
@@ -43,46 +43,44 @@ function mergeSegments(
   };
 }
 
+function discard(candidate: CandidatePlace, reason: DiscardReason): Discarded {
+  return {
+    externalIds: candidate.elements.map((e) => e.externalId),
+    name: candidate.name,
+    reason,
+  };
+}
+
 /**
  * OSM splits a river into many ways. Joins the named segments of each river (same name, ignoring
  * case and accents) into one candidate that keeps every segment's point, so HU-23 can make one
- * site per river and municipality. A river relation duplicates its ways and is dropped when they
- * are present; canals tagged as rivers are dropped. Unnamed segments stay as they are (HU-24
- * discards them).
+ * site per river and municipality. River relations are dropped: they repeat their ways and their
+ * center does not represent the river. Canals tagged as rivers are dropped too. Unnamed segments
+ * stay as they are (HU-24 discards them).
  */
 export function groupRiverSegments(
   candidates: readonly CandidatePlace[],
   activityOrder: readonly string[],
-): { candidates: CandidatePlace[]; discarded: DiscardedElement[] } {
+): { candidates: CandidatePlace[]; discarded: Discarded[] } {
   const result: CandidatePlace[] = [];
-  const discarded: DiscardedElement[] = [];
+  const discarded: Discarded[] = [];
   const rivers = new Map<string, CandidatePlace[]>();
 
   for (const candidate of candidates) {
-    if (candidate.placeTypeSlug !== RIVER_TYPE_SLUG || candidate.name === null) {
+    if (candidate.placeTypeSlug !== RIVER_TYPE_SLUG) {
+      result.push(candidate);
+    } else if (isRelation(candidate)) {
+      discarded.push(discard(candidate, "river-relation"));
+    } else if (candidate.name === null) {
       result.push(candidate);
     } else if (isCanalName(candidate.name)) {
-      for (const e of candidate.elements)
-        discarded.push({ externalId: e.externalId, reason: "canal" });
+      discarded.push(discard(candidate, "canal"));
     } else {
       const key = slugify(candidate.name);
       rivers.set(key, [...(rivers.get(key) ?? []), candidate]);
     }
   }
 
-  for (const members of rivers.values()) {
-    const ways = members.filter((m) => !isRelation(m));
-    if (ways.length === 0) {
-      result.push(mergeSegments(members, activityOrder));
-      continue;
-    }
-    for (const relation of members.filter(isRelation)) {
-      for (const e of relation.elements) {
-        discarded.push({ externalId: e.externalId, reason: "duplicate-river-relation" });
-      }
-    }
-    result.push(mergeSegments(ways, activityOrder));
-  }
-
+  for (const segments of rivers.values()) result.push(mergeSegments(segments, activityOrder));
   return { candidates: result, discarded };
 }
