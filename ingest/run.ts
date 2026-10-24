@@ -1,4 +1,4 @@
-import type { IngestSource } from "./sources/types";
+import type { IngestContext, IngestSource } from "./sources/types";
 
 export type SourceOutcome =
   | { name: string; ok: true; durationMs: number }
@@ -10,13 +10,14 @@ export type SourceOutcome =
  */
 export async function runSources(
   sources: readonly IngestSource[],
+  context: IngestContext,
   now: () => number = performance.now.bind(performance),
 ): Promise<SourceOutcome[]> {
   const outcomes: SourceOutcome[] = [];
   for (const source of sources) {
     const start = now();
     try {
-      await source.run();
+      await source.run(context);
       outcomes.push({ name: source.name, ok: true, durationMs: now() - start });
     } catch (error) {
       outcomes.push({ name: source.name, ok: false, durationMs: now() - start, error });

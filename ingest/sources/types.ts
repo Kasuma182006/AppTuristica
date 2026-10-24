@@ -1,3 +1,10 @@
+import type { IngestDb } from "../db";
+
+/** Shared by every source during one `npm run ingest`. */
+export interface IngestContext {
+  db: IngestDb;
+}
+
 /**
  * A source that can be run on its own with `npm run ingest -- --source=<name>`.
  * Enrichment sources (Wikidata, Commons) are not ingest sources: they run as steps inside the
@@ -8,5 +15,5 @@ export interface IngestSource {
   name: string;
   /** Spanish description shown in the command's error message. */
   description: string;
-  run(): Promise<void>;
+  run(context: IngestContext): Promise<void>;
 }
