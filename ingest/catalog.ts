@@ -1,6 +1,12 @@
 import { asc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { activities, placeTypeActivities, placeTypes } from "@db/schema";
+import {
+  activities,
+  departments,
+  municipalities,
+  placeTypeActivities,
+  placeTypes,
+} from "@db/schema";
 import type { ActivityRule } from "@/modules/catalogs/activities";
 import {
   osmTagSelectorSchema,
@@ -14,12 +20,23 @@ export interface CatalogPlaceType {
   osmTags: OsmTagSelector[];
 }
 
-/** Classification rules from the database: place types (HU-11) and activities (HU-12). */
+/** A municipality with its department, as written in descriptions. */
+export interface CatalogMunicipality {
+  name: string;
+  departmentName: string;
+}
+
+/**
+ * Reference data from the database: classification rules for place types (HU-11) and
+ * activities (HU-12), and municipality names for descriptions (HU-29).
+ */
 export interface Catalog {
   /** In priority order: the first type whose tags match wins. */
   placeTypes: CatalogPlaceType[];
   /** In display order. */
   activityRules: ActivityRule[];
+  /** By municipality id. */
+  municipalities: ReadonlyMap<number, CatalogMunicipality>;
 }
 
 const activityTagsSchema = z.array(osmTagSelectorSchema);
@@ -43,6 +60,11 @@ export async function loadCatalog(db: IngestDb): Promise<Catalog> {
     .innerJoin(activities, eq(placeTypeActivities.activityId, activities.id))
     .innerJoin(placeTypes, eq(placeTypeActivities.placeTypeId, placeTypes.id));
 
+  const municipalityRows = await db
+    .select({ id: municipalities.id, name: municipalities.name, departmentName: departments.name })
+    .from(municipalities)
+    .innerJoin(departments, eq(municipalities.departmentId, departments.id));
+
   return {
     placeTypes: typeRows.map((row) => ({
       slug: row.slug,
@@ -53,6 +75,12 @@ export async function loadCatalog(db: IngestDb): Promise<Catalog> {
       placeTypes: typeRuleRows.filter((r) => r.activity === row.slug).map((r) => r.placeType),
       osmTags: parseTags(activityTagsSchema, row.osmTags, `activity "${row.slug}"`),
     })),
+    municipalities: new Map(
+      municipalityRows.map((row) => [
+        row.id,
+        { name: row.name, departmentName: row.departmentName },
+      ]),
+    ),
   };
 }
 

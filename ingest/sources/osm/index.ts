@@ -1,6 +1,7 @@
 import { DEPARTMENTS } from "@db/seeds/departments";
 import { loadCatalog } from "../../catalog";
 import { deduplicate, formatMerge } from "../../pipeline/dedup";
+import { describeSites } from "../../pipeline/describe";
 import { assignMunicipalities, locatePoints } from "../../pipeline/municipality";
 import { applyRestrictions, findContainingAreas } from "../../pipeline/restrictions";
 import type { CandidatePlace, LocatedCandidate, RestrictedSite } from "../../pipeline/types";
@@ -41,8 +42,8 @@ export function summarizeRestrictions(sites: readonly RestrictedSite[]): string 
   return `${fragile} in protected areas (fragile), ${privateProperty} private property`;
 }
 
-// Tourist sites from OpenStreetMap, for every department in scope. Template descriptions and the
-// rest of the pipeline arrive in HU-29 onwards.
+// Tourist sites from OpenStreetMap, for every department in scope. The confidence score and the
+// rest of the pipeline arrive in HU-30 onwards.
 export const osmSource: IngestSource = {
   name: "osm",
   description: "sitios de OpenStreetMap",
@@ -112,5 +113,12 @@ export const osmSource: IngestSource = {
       (await locatePoints(db, points)).map((location) => location?.municipalityId ?? null),
     );
     console.log(`osm: ${summarizePhotos(withPhotos)}`);
+
+    const described = describeSites(withPhotos, catalog.municipalities);
+    // One example per type, to review the templates in the run log.
+    const examples = new Map(described.map((site) => [site.placeTypeSlug, site]));
+    for (const site of examples.values()) {
+      console.log(`osm: description of ${site.name}: ${site.description}`);
+    }
   },
 };
