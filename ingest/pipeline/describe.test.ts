@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { describeSite, describeSites } from "./describe";
 import type { SiteWithPhotos } from "./types";
 
-const DAGUA = { name: "Dagua", departmentName: "Valle del Cauca" };
+const DAGUA = { name: "Dagua", slug: "dagua", departmentName: "Valle del Cauca" };
 const point = { lat: 3.6, lon: -76.7 };
 
 function site(

@@ -14,12 +14,13 @@ import type { OsmElement } from "./overpass";
 
 // The seeded rules, as loadCatalog reads them from the database.
 const seedCatalog: Catalog = {
-  placeTypes: PLACE_TYPES.map((t) => ({ slug: t.slug, osmTags: [...t.osmTags] })),
+  placeTypes: PLACE_TYPES.map((t, i) => ({ id: i + 1, slug: t.slug, osmTags: [...t.osmTags] })),
   activityRules: ACTIVITIES.map((a) => ({
     slug: a.slug,
     placeTypes: [...a.placeTypes],
     osmTags: [...a.osmTags],
   })),
+  activityIds: new Map(ACTIVITIES.map((a, i) => [a.slug, i + 1])),
   municipalities: new Map(),
 };
 

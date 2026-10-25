@@ -40,9 +40,11 @@ export interface Merge {
   mergedExternalIds: string[];
 }
 
-/** Number of optional fields with data: the more, the better the site to keep. */
+/** Number of optional fields with data (a Wikidata item counts): the more, the better to keep. */
 function filledFields(site: RestrictedSite): number {
-  return [site.difficulty, site.altitudeM, site.cost].filter((value) => value !== null).length;
+  return [site.difficulty, site.altitudeM, site.cost, site.wikidataId].filter(
+    (value) => value !== null,
+  ).length;
 }
 
 function firstNumericId(site: RestrictedSite): number {

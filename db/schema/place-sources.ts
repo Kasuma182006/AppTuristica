@@ -1,5 +1,14 @@
 import { sql } from "drizzle-orm";
-import { check, integer, pgEnum, pgTable, text, timestamp, unique } from "drizzle-orm/pg-core";
+import {
+  check,
+  integer,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  unique,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 import { places } from "./places";
 
 // Where a site's data comes from. Commons is a photo source (photos table), RNT feeds agencies.
@@ -23,9 +32,13 @@ export const placeSources = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
-    // Global, not per site: an external element belongs to one site, which keeps ingest
-    // idempotent (it finds the site by its external id instead of creating a duplicate).
-    unique("place_sources_source_external_id_unique").on(t.source, t.externalId),
+    // Global for OSM: an element belongs to one site, which keeps ingest idempotent (it finds
+    // the site by its OSM id instead of creating a duplicate). A Wikidata item may back several
+    // sites, e.g. the Río Cauca, split by municipality (HU-31).
+    uniqueIndex("place_sources_osm_external_id_unique")
+      .on(t.externalId)
+      .where(sql`${t.source} = 'openstreetmap'`),
+    unique("place_sources_place_source_external_id_unique").on(t.placeId, t.source, t.externalId),
     // IS NOT NULL guards: a NULL comparison would make the check pass.
     check(
       "place_sources_external_id_format",
