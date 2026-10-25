@@ -1,0 +1,66 @@
+name: Ingest
+
+# Weekly import of open data into the shared database (HU-34), plus manual runs from the
+# Actions tab. Needs the DATABASE_URL_DIRECT secret; OVERPASS_URLS (repository variable) is
+# optional and overrides the default Overpass servers.
+on:
+  schedule:
+    # Mondays 03:17 UTC = Sundays 22:17 in Colombia: night in Europe, where the Overpass servers
+    # are less busy. Minute 17 avoids GitHub's on-the-hour delays.
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+    inputs:
+      source:
+        description: Fuente a importar
+        type: choice
+        options: [all, osm, rnt]
+        default: all
+
+permissions:
+  contents: read
+
+# One run at a time: a manual run waits for the scheduled one instead of writing alongside it.
+concurrency:
+  group: ingest
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    name: Import open data
+    runs-on: ubuntu-latest
+    # A normal run takes 5-17 min; the worst case (every Overpass retry, then the 20 min retry)
+    # is about 75 min.
+    timeout-minutes: 90
+    env:
+      DATABASE_URL_DIRECT: ${{ secrets.DATABASE_URL_DIRECT }}
+      OVERPASS_URLS: ${{ vars.OVERPASS_URLS }}
+      # Scheduled runs have no inputs: they import every source.
+      SOURCE: ${{ inputs.source || 'all' }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Sites (OpenStreetMap)
+        id: osm
+        if: env.SOURCE != 'rnt'
+        # A failure is retried below; the retry decides the job's result.
+        continue-on-error: true
+        run: npm run ingest -- --source=osm
+
+      # Public Overpass servers are often busy for a while: try once more later.
+      - name: Sites (OpenStreetMap), retry in 20 min
+        if: steps.osm.outcome == 'failure'
+        run: |
+          sleep 1200
+          npm run ingest -- --source=osm
+
+      # Agencies do not depend on sites: they run even when OSM failed.
+      - name: Agencies (RNT)
+        if: ${{ !cancelled() && env.SOURCE != 'osm' }}
+        run: npm run ingest -- --source=rnt

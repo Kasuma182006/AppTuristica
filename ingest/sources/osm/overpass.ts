@@ -6,8 +6,10 @@ const USER_AGENT = "buscador-turistico (https://app-turistica.vercel.app)";
 
 export const DEFAULT_OVERPASS_ENDPOINTS: readonly string[] = [
   "https://overpass-api.de/api/interpreter",
-  // Fallback: overpass-api.de answers 406 to some networks.
+  // Fallbacks: overpass-api.de answers 406 to some networks, and every public server is busy at
+  // times (HU-34). See README: the weekly run may move to a Geofabrik extract.
   "https://overpass.private.coffee/api/interpreter",
+  "https://overpass.kumi.systems/api/interpreter",
 ];
 
 /** Waits before each retry on the same endpoint; its length is the number of retries. */

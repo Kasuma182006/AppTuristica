@@ -89,8 +89,10 @@ crea/actualiza lo que cambió, y borra las fuentes que lleva 30 días sin ver (y
 ninguna). Slugs `nombre-municipio`, fijos una vez creados. `rnt`: agencias activas (de viajes y turismo
 + operadoras, sin mayoristas) por número RNT; las que salen del RNT pasan a inactivas; teléfono y correo
 solo de empresas (NIT 8/9…), nunca de personas naturales; guías de turismo nunca.
-Overpass: overpass-api.de responde 406 desde la red local; la ingesta pasa sola al respaldo
-(overpass.private.coffee). Servidores configurables con `OVERPASS_URLS`. La consulta del Valle tarda ~1-2 min.
+Overpass: overpass-api.de responde 406 desde la red local; la ingesta pasa sola a los respaldos
+(overpass.private.coffee, overpass.kumi.systems). Servidores configurables con `OVERPASS_URLS`. Una corrida
+de OSM tarda 5-17 min. Cron semanal en `.github/workflows/ingest.yml` (secreto `DATABASE_URL_DIRECT`).
+Si Overpass falla seguido, el plan es pasar a un extracto de Geofabrik + osmium (ver README).
 Scripts fuera de Next.js (seed, ingesta) se ejecutan con `tsx`. En código, "Lugar" (municipio) es
 `municipalities`; `places` son los sitios turísticos. Toda tabla nueva lleva `.enableRLS()` (lo verifica una prueba).
 Pruebas: archivos `*.test.ts` junto al código en `src/`, `db/` o `ingest/`. Node 24 (`.nvmrc`; CI y Vercel usan la última 24.x). Local: Node 24.22.1 (parches de
