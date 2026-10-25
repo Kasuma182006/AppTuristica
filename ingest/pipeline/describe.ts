@@ -1,3 +1,4 @@
+import { slugify } from "@/lib/slug";
 import type { OsmTags } from "@/modules/catalogs/osm-tags";
 import type { CatalogMunicipality } from "../catalog";
 import { representativeElement } from "./restrictions";
@@ -7,12 +8,17 @@ import type { DescribedSite, Difficulty, SiteWithPhotos } from "./types";
 // from a source. Impersonal and without the site's name (the page title already shows it), so no
 // article or gender has to be guessed. Activities are left out: the page lists them apart.
 
-/** What the site is, as the first words of its description; refined with OSM tags when they tell. */
-type KindOf = (tags: OsmTags) => string;
+/**
+ * What the site is, as the first words of its description; refined with OSM tags (or the name)
+ * when they tell.
+ */
+type KindOf = (tags: OsmTags, name: string) => string;
 
 const KINDS: Readonly<Record<string, KindOf>> = {
   cascada: () => "Cascada",
-  rio: () => "Tramo del río",
+  // Streams are tagged as rivers too; their name tells them apart ("Quebrada Ordoñez").
+  rio: (_tags, name) =>
+    /^quebrada(-|$)/.test(slugify(name)) ? "Tramo de la quebrada" : "Tramo del río",
   mirador: () => "Mirador",
   cerro: (tags) =>
     tags.natural === "volcano" ? "Volcán" : tags.natural === "peak" ? "Pico" : "Cerro",
@@ -42,7 +48,7 @@ const metersFormat = new Intl.NumberFormat("es-CO");
 /** The description of a site in its municipality, e.g. "Cascada en Dagua, Valle del Cauca. …". */
 export function describeSite(site: SiteWithPhotos, municipality: CatalogMunicipality): string {
   const { tags } = representativeElement(site);
-  const kind = (KINDS[site.placeTypeSlug] ?? (() => GENERIC_KIND))(tags);
+  const kind = (KINDS[site.placeTypeSlug] ?? (() => GENERIC_KIND))(tags, site.name);
   const difficulty =
     site.difficulty === null ? "" : `, de dificultad ${DIFFICULTY_LABELS[site.difficulty]}`;
   const sentences = [

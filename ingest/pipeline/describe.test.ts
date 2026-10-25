@@ -68,6 +68,15 @@ describe("describeSite", () => {
     expect(describeSite(site(type, tags), DAGUA)).toBe(`${kind} en Dagua, Valle del Cauca.`);
   });
 
+  it("calls streams named Quebrada a quebrada", () => {
+    expect(
+      describeSite(site("rio", { waterway: "river" }, { name: "Quebrada Ordoñez" }), DAGUA),
+    ).toBe("Tramo de la quebrada en Dagua, Valle del Cauca.");
+    expect(describeSite(site("rio", { waterway: "river" }, { name: "Río Quebradas" }), DAGUA)).toBe(
+      "Tramo del río en Dagua, Valle del Cauca.",
+    );
+  });
+
   it("warns about protected areas, telling apart sites inside one from reserves", () => {
     expect(describeSite(site("cascada", {}, { inProtectedArea: true }), DAGUA)).toBe(
       "Cascada en Dagua, Valle del Cauca. Está dentro de un área protegida: visite el lugar con respeto y no deje rastro.",
