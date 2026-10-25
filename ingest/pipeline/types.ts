@@ -93,9 +93,14 @@ export interface SiteWithPhotos extends EnrichedSite {
   photos: PhotoCandidate[];
 }
 
-/** A site with its template description (HU-29), ready for scoring and saving. */
+/** A site with its template description (HU-29), ready for scoring. */
 export interface DescribedSite extends SiteWithPhotos {
   description: string;
+}
+
+/** A described site with its confidence score (HU-30), 0–100, ready for saving. */
+export interface ScoredSite extends DescribedSite {
+  confidence: number;
 }
 
 /** A deduplicated site with its Wikidata data (null when OSM links no existing item). */
