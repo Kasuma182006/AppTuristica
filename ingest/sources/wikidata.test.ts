@@ -12,6 +12,12 @@ const sonso = {
       url: "https://es.wikipedia.org/wiki/Laguna_de_Sonso",
     },
   },
+  claims: {
+    P18: [{ mainsnak: { datavalue: { value: "Laguna de Sonso Sept 2017 13.jpg" } } }],
+    P373: [{ mainsnak: { datavalue: { value: "Laguna de Sonso" } } }],
+    // Other properties hold non-string values; they are ignored.
+    P625: [{ mainsnak: { datavalue: { value: { latitude: 3.86, longitude: -76.35 } } } }],
+  },
 };
 
 function json(body: unknown, status = 200): Response {
@@ -22,11 +28,13 @@ function json(body: unknown, status = 200): Response {
 }
 
 describe("parseEntities", () => {
-  it("takes the Spanish description and Wikipedia article", () => {
+  it("takes the Spanish description, Wikipedia article, image and Commons category", () => {
     expect(parseEntities({ entities: { Q3216251: sonso } }).get("Q3216251")).toEqual({
       id: "Q3216251",
       description: "humedal en Colombia",
       wikipediaUrl: "https://es.wikipedia.org/wiki/Laguna_de_Sonso",
+      image: "Laguna de Sonso Sept 2017 13.jpg",
+      commonsCategory: "Laguna de Sonso",
     });
   });
 
@@ -38,7 +46,13 @@ describe("parseEntities", () => {
       },
     });
     expect([...items.keys()]).toEqual(["Q2"]);
-    expect(items.get("Q2")).toEqual({ id: "Q2", description: null, wikipediaUrl: null });
+    expect(items.get("Q2")).toEqual({
+      id: "Q2",
+      description: null,
+      wikipediaUrl: null,
+      image: null,
+      commonsCategory: null,
+    });
   });
 
   it("indexes redirected items by the id that was requested", () => {
@@ -51,7 +65,7 @@ describe("parseEntities", () => {
   it("rejects API errors (e.g. maxlag) and malformed bodies", () => {
     expect(() =>
       parseEntities({ error: { code: "maxlag", info: "Waiting for a database server" } }),
-    ).toThrow("Wikidata API error: maxlag");
+    ).toThrow("Wikimedia API error: maxlag");
     expect(() => parseEntities("<html>")).toThrow();
   });
 });
@@ -117,7 +131,7 @@ describe("fetchWikidataItems", () => {
   it("fails when the retries run out, or right away on a 4xx", async () => {
     const exhausted = fakeApi([json({}, 503), json({}, 503), json({}, 503)]);
     await expect(fetchWikidataItems(["Q1"], exhausted.options)).rejects.toThrow(
-      "Wikidata request failed: HTTP 503",
+      "Wikimedia request failed: HTTP 503",
     );
     const rejected = fakeApi([json({}, 400)]);
     await expect(fetchWikidataItems(["Q1"], rejected.options)).rejects.toThrow("HTTP 400");
