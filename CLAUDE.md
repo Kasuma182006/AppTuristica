@@ -86,7 +86,9 @@ Disponibles (`npm run <cmd>`): `dev` · `build` · `lint` · `typecheck` · `for
 `ingest` (todas las fuentes; `-- --source=osm|rnt` para una; si una falla sigue y sale con código 1).
 La ingesta escribe en la base compartida (= producción): reconoce los sitios por su id de OSM, solo
 crea/actualiza lo que cambió, y borra las fuentes que lleva 30 días sin ver (y el sitio si queda sin
-ninguna). Slugs `nombre-municipio`, fijos una vez creados.
+ninguna). Slugs `nombre-municipio`, fijos una vez creados. `rnt`: agencias activas (de viajes y turismo
++ operadoras, sin mayoristas) por número RNT; las que salen del RNT pasan a inactivas; teléfono y correo
+solo de empresas (NIT 8/9…), nunca de personas naturales; guías de turismo nunca.
 Overpass: overpass-api.de responde 406 desde la red local; la ingesta pasa sola al respaldo
 (overpass.private.coffee). Servidores configurables con `OVERPASS_URLS`. La consulta del Valle tarda ~1-2 min.
 Scripts fuera de Next.js (seed, ingesta) se ejecutan con `tsx`. En código, "Lugar" (municipio) es
