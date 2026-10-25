@@ -6,6 +6,7 @@ import { existsSync } from "node:fs";
 import { selectSources } from "./cli";
 import { connectIngestDb } from "./db";
 import { formatOutcome, runSources } from "./run";
+import { ingestRunLog } from "./run-log";
 import { sources } from "./sources";
 
 // Like db/seeds: load .env.local locally; GitHub Actions injects env vars.
@@ -25,16 +26,19 @@ async function main(): Promise<void> {
   const { db, close } = connectIngestDb();
   let outcomes;
   try {
-    outcomes = await runSources(selected, { db });
+    outcomes = await runSources(selected, { db }, { log: ingestRunLog(db) });
   } finally {
     await close();
   }
 
+  // Summary at the end, also recorded in ingest_runs (HU-33).
+  console.log("summary:");
   for (const outcome of outcomes) {
     if (outcome.ok) console.log(formatOutcome(outcome));
     else {
       console.error(formatOutcome(outcome));
-      console.error(outcome.error);
+      // The stack only helps when the source stopped; item errors were logged by the source.
+      if (!outcome.stats) console.error(outcome.error);
     }
   }
   if (outcomes.some((o) => !o.ok)) process.exitCode = 1;
