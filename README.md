@@ -25,6 +25,7 @@ npm run db:migrate   # aplica las migraciones pendientes en Supabase
 npm run db:studio    # explorador visual de la base (Drizzle Studio)
 npm run db:seed      # carga los catálogos (departamentos…); se puede repetir sin duplicar
 npm run db:fetch-boundary -- 76  # descarga de OSM el límite de un departamento (código DIVIPOLA)
+npm run ingest       # importa sitios (OSM) y agencias (RNT); `-- --source=osm|rnt` para una sola
 ```
 
 Las credenciales van en `.env.local` (ver `.env.example`).
@@ -67,5 +68,31 @@ GitHub Actions (`.github/workflows/ci.yml`) ejecuta en cada push y pull request:
 tipos, pruebas, build y `npm audit --omit=dev`. Las alertas que solo afectan dependencias de
 desarrollo (por ejemplo `braces`, vía `eslint-config-next`) están aceptadas mientras no exista
 versión corregida.
+
+## Ingesta programada
+
+GitHub Actions (`.github/workflows/ingest.yml`) ejecuta `npm run ingest` cada semana (lunes 03:17
+UTC, domingo 10:17 p. m. en Colombia) y a mano desde la pestaña Actions → Ingest → Run workflow,
+eligiendo la fuente (`all`, `osm` o `rnt`). Cada fuente queda registrada en la tabla `ingest_runs`.
+
+- Secreto obligatorio (Settings → Secrets and variables → Actions → Secrets): `DATABASE_URL_DIRECT`.
+- Variable opcional (misma sección, pestaña Variables): `OVERPASS_URLS`, si se quieren otros
+  servidores de Overpass.
+- Si OSM falla, el workflow lo reintenta una vez a los 20 minutos; las agencias se importan igual.
+  Una semana fallida no borra nada: los sitios solo se retiran tras 30 días sin verse.
+- GitHub desactiva los cron de repositorios públicos sin actividad en 60 días: si pasa, se reactiva
+  en Actions → Ingest → Enable workflow.
+
+### Posible cambio: de Overpass a Geofabrik
+
+Los servidores públicos de Overpass fallan con frecuencia (en las pruebas de octubre de 2026, 2 de 7
+corridas fallaron, y overpass-api.de responde 406 desde algunas redes). Si el cron falla seguido, la
+alternativa evaluada es descargar en GitHub Actions el extracto de Colombia de Geofabrik
+(`colombia-latest.osm.pbf`, ~333 MB, actualizado a diario) y filtrarlo con `osmium`, dejando
+Overpass solo para pruebas locales. Es una descarga de archivo estable, sin cuotas, y da siempre el
+mismo resultado para los mismos datos. Implica reescribir la consulta (hoy Overpass entrega los
+puntos y polígonos ya armados) y sería una historia aparte. Opciones descartadas: la API de ohsome
+(datos con ~3 meses de atraso), más servidores públicos de Overpass (igual de inestables) y un
+Overpass propio (no cabe en costo $0).
 
 Ver `CLAUDE.md` para arquitectura y reglas, y `docs/` para requerimientos e historias.
