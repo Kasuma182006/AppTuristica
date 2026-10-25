@@ -68,6 +68,29 @@ export interface WikidataInfo {
   description: string | null;
   /** Spanish Wikipedia article, or null when there is none. */
   wikipediaUrl: string | null;
+  /** Commons file name of the item's image (P18), e.g. "Lago Calima.jpg"; used by HU-28. */
+  image: string | null;
+  /** Commons category of the item (P373), without the "Category:" prefix; used by HU-28. */
+  commonsCategory: string | null;
+}
+
+/** A Commons photo of a site, with the attribution its license requires (HU-28). */
+export interface PhotoCandidate {
+  /** Image file at upload.wikimedia.org. */
+  url: string;
+  author: string;
+  /** License name as Commons gives it, e.g. "CC BY-SA 4.0". */
+  license: string;
+  licenseUrl: string | null;
+  /** File page at commons.wikimedia.org, linked from the attribution. */
+  sourceUrl: string;
+  width: number | null;
+  height: number | null;
+}
+
+/** A site ready to save, with its photos (first = cover; at most five). */
+export interface SiteWithPhotos extends EnrichedSite {
+  photos: PhotoCandidate[];
 }
 
 /** A deduplicated site with its Wikidata data (null when OSM links no existing item). */

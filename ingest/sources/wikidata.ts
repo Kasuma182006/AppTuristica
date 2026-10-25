@@ -1,39 +1,50 @@
-import { setTimeout as sleep } from "node:timers/promises";
 import { z } from "zod";
 import type { EnrichedSite, RestrictedSite, WikidataInfo } from "../pipeline/types";
+import { assertNoApiError, getWikimediaJson, type WikimediaOptions } from "./wikimedia";
 
 // Enrichment step of the `osm` run (HU-27), not a source of its own: sites whose OSM data links a
-// Wikidata item get its Spanish short description (CC0) and Spanish Wikipedia article.
+// Wikidata item get its Spanish short description (CC0) and Spanish Wikipedia article, plus its
+// image and Commons category, which HU-28 uses to find photos.
 
 const API_URL = "https://www.wikidata.org/w/api.php";
-// Wikimedia's User-Agent policy asks for a way to reach the operator: the app's URL.
-const USER_AGENT = "buscador-turistico (https://app-turistica.vercel.app)";
 // wbgetentities accepts at most 50 ids per request.
 const MAX_IDS_PER_REQUEST = 50;
-const RETRY_DELAYS_MS: readonly number[] = [5_000, 15_000, 45_000];
-const REQUEST_TIMEOUT_MS = 60_000;
+// Wikidata properties: image (P18) and Commons category (P373), both plain strings.
+const IMAGE_PROPERTY = "P18";
+const COMMONS_CATEGORY_PROPERTY = "P373";
+
+const claimSchema = z.object({
+  mainsnak: z.object({ datavalue: z.object({ value: z.unknown() }).optional() }),
+});
 
 const entitySchema = z.object({
   id: z.string(),
   missing: z.string().optional(),
   descriptions: z.record(z.string(), z.object({ value: z.string() })).optional(),
   sitelinks: z.record(z.string(), z.object({ url: z.string().optional() })).optional(),
+  claims: z.record(z.string(), z.array(claimSchema)).optional(),
   // Present when the requested id was merged into another item.
   redirects: z.object({ from: z.string(), to: z.string() }).optional(),
 });
 
-const responseSchema = z.object({
-  entities: z.record(z.string(), entitySchema).optional(),
-  // API errors (e.g. maxlag) come with HTTP 200.
-  error: z.object({ code: z.string(), info: z.string().optional() }).optional(),
-});
+const responseSchema = z.object({ entities: z.record(z.string(), entitySchema).optional() });
+
+/** The first string value of a property, e.g. the file name in P18. */
+function firstString(
+  claims: z.infer<typeof entitySchema>["claims"],
+  property: string,
+): string | null {
+  for (const claim of claims?.[property] ?? []) {
+    const value = claim.mainsnak.datavalue?.value;
+    if (typeof value === "string" && value.trim() !== "") return value.trim();
+  }
+  return null;
+}
 
 /** Parses a wbgetentities response into Spanish data by requested id; missing items are left out. */
 export function parseEntities(body: unknown): Map<string, WikidataInfo> {
+  assertNoApiError(body);
   const response = responseSchema.parse(body);
-  if (response.error) {
-    throw new Error(`Wikidata API error: ${response.error.code} ${response.error.info ?? ""}`);
-  }
   const result = new Map<string, WikidataInfo>();
   for (const entity of Object.values(response.entities ?? {})) {
     if (entity.missing !== undefined) continue;
@@ -42,16 +53,15 @@ export function parseEntities(body: unknown): Map<string, WikidataInfo> {
     const wikipediaUrl =
       url !== null && url.startsWith("https://es.wikipedia.org/wiki/") ? url : null;
     const requestedId = entity.redirects?.from ?? entity.id;
-    result.set(requestedId, { id: requestedId, description, wikipediaUrl });
+    result.set(requestedId, {
+      id: requestedId,
+      description,
+      wikipediaUrl,
+      image: firstString(entity.claims, IMAGE_PROPERTY),
+      commonsCategory: firstString(entity.claims, COMMONS_CATEGORY_PROPERTY),
+    });
   }
   return result;
-}
-
-export interface WikidataOptions {
-  fetch?: typeof fetch;
-  sleep?: (ms: number) => Promise<unknown>;
-  retryDelaysMs?: readonly number[];
-  log?: (message: string) => void;
 }
 
 function requestUrl(ids: readonly string[]): string {
@@ -59,7 +69,7 @@ function requestUrl(ids: readonly string[]): string {
   url.search = new URLSearchParams({
     action: "wbgetentities",
     ids: ids.join("|"),
-    props: "descriptions|sitelinks/urls",
+    props: "descriptions|sitelinks/urls|claims",
     languages: "es",
     sitefilter: "eswiki",
     format: "json",
@@ -69,62 +79,17 @@ function requestUrl(ids: readonly string[]): string {
   return url.toString();
 }
 
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
-/** One request: the parsed items, or a failure worth retrying. A 4xx means a bad request: throws. */
-async function attemptBatch(
-  ids: readonly string[],
-  doFetch: typeof fetch,
-): Promise<Map<string, WikidataInfo> | { failure: string }> {
-  let response: Response;
-  try {
-    response = await doFetch(requestUrl(ids), {
-      headers: { "User-Agent": USER_AGENT },
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-    });
-  } catch (error) {
-    return { failure: `network error: ${errorMessage(error)}` };
-  }
-  if (response.status === 429 || response.status >= 500) {
-    return { failure: `HTTP ${response.status}` };
-  }
-  if (!response.ok) throw new Error(`Wikidata rejected the request (HTTP ${response.status})`);
-  try {
-    return parseEntities(await response.json());
-  } catch (error) {
-    // Includes API errors, which Wikidata reports with status 200.
-    return { failure: `invalid response: ${errorMessage(error)}` };
-  }
-}
-
-async function fetchBatch(ids: readonly string[], options: WikidataOptions) {
-  const doFetch = options.fetch ?? fetch;
-  const wait = options.sleep ?? sleep;
-  const log = options.log ?? console.log;
-  const delays = options.retryDelaysMs ?? RETRY_DELAYS_MS;
-
-  for (let retry = 0; ; retry++) {
-    const result = await attemptBatch(ids, doFetch);
-    if (result instanceof Map) return result;
-    const delay = delays[retry];
-    if (delay === undefined) throw new Error(`Wikidata request failed: ${result.failure}`);
-    log(`Wikidata: ${result.failure}; retrying in ${delay / 1000}s`);
-    await wait(delay);
-  }
-}
-
 /** Spanish data of each Wikidata item, in batches of 50, retrying network errors, 429 and 5xx. */
 export async function fetchWikidataItems(
   ids: readonly string[],
-  options: WikidataOptions = {},
+  options: WikimediaOptions = {},
 ): Promise<Map<string, WikidataInfo>> {
   const unique = [...new Set(ids)];
   const result = new Map<string, WikidataInfo>();
   for (let start = 0; start < unique.length; start += MAX_IDS_PER_REQUEST) {
-    const batch = await fetchBatch(unique.slice(start, start + MAX_IDS_PER_REQUEST), options);
-    for (const [id, info] of batch) result.set(id, info);
+    const batch = unique.slice(start, start + MAX_IDS_PER_REQUEST);
+    const items = await getWikimediaJson(requestUrl(batch), parseEntities, options);
+    for (const [id, info] of items) result.set(id, info);
   }
   return result;
 }

@@ -1,10 +1,11 @@
 import { DEPARTMENTS } from "@db/seeds/departments";
 import { loadCatalog } from "../../catalog";
 import { deduplicate, formatMerge } from "../../pipeline/dedup";
-import { assignMunicipalities } from "../../pipeline/municipality";
+import { assignMunicipalities, locatePoints } from "../../pipeline/municipality";
 import { applyRestrictions, findContainingAreas } from "../../pipeline/restrictions";
 import type { CandidatePlace, LocatedCandidate, RestrictedSite } from "../../pipeline/types";
 import { discardInvalid, formatDiscarded, summarizeDiscarded } from "../../pipeline/validate";
+import { attachPhotos, summarizePhotos } from "../commons";
 import type { IngestSource } from "../types";
 import { attachWikidata, fetchWikidataItems, summarizeWikidata } from "../wikidata";
 import { normalizeOsmElement } from "./normalize";
@@ -40,8 +41,8 @@ export function summarizeRestrictions(sites: readonly RestrictedSite[]): string 
   return `${fragile} in protected areas (fragile), ${privateProperty} private property`;
 }
 
-// Tourist sites from OpenStreetMap, for every department in scope. Commons photos and the rest
-// of the pipeline arrive in HU-28 onwards.
+// Tourist sites from OpenStreetMap, for every department in scope. Template descriptions and the
+// rest of the pipeline arrive in HU-29 onwards.
 export const osmSource: IngestSource = {
   name: "osm",
   description: "sitios de OpenStreetMap",
@@ -105,5 +106,11 @@ export const osmSource: IngestSource = {
     const wikidataIds = deduplicated.sites.flatMap((s) => (s.wikidataId ? [s.wikidataId] : []));
     const enriched = attachWikidata(deduplicated.sites, await fetchWikidataItems(wikidataIds));
     console.log(`osm: ${summarizeWikidata(enriched)}`);
+
+    // A photo is taken in scope when it falls in a municipality (with the border tolerance).
+    const withPhotos = await attachPhotos(enriched, async (points) =>
+      (await locatePoints(db, points)).map((location) => location?.municipalityId ?? null),
+    );
+    console.log(`osm: ${summarizePhotos(withPhotos)}`);
   },
 };
