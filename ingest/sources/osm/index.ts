@@ -1,5 +1,6 @@
 import { DEPARTMENTS } from "@db/seeds/departments";
 import { loadCatalog } from "../../catalog";
+import { scoreSites, summarizeConfidence } from "../../pipeline/confidence";
 import { deduplicate, formatMerge } from "../../pipeline/dedup";
 import { describeSites } from "../../pipeline/describe";
 import { assignMunicipalities, locatePoints } from "../../pipeline/municipality";
@@ -42,8 +43,7 @@ export function summarizeRestrictions(sites: readonly RestrictedSite[]): string 
   return `${fragile} in protected areas (fragile), ${privateProperty} private property`;
 }
 
-// Tourist sites from OpenStreetMap, for every department in scope. The confidence score and the
-// rest of the pipeline arrive in HU-30 onwards.
+// Tourist sites from OpenStreetMap, for every department in scope. Saving them arrives in HU-31.
 export const osmSource: IngestSource = {
   name: "osm",
   description: "sitios de OpenStreetMap",
@@ -120,5 +120,8 @@ export const osmSource: IngestSource = {
     for (const site of examples.values()) {
       console.log(`osm: description of ${site.name}: ${site.description}`);
     }
+
+    const scored = scoreSites(described);
+    console.log(`osm: ${summarizeConfidence(scored)}`);
   },
 };

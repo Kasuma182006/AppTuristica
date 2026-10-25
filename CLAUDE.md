@@ -118,3 +118,5 @@ filtro por costo, fotos en propuestas, LLM/scraping, otros departamentos, multil
 - **Requerimientos:** `docs/requerimientos.md`. Solo si la HU cita un RF/RNF que necesites aclarar;
   busca el ID con grep (`RF-26`) en vez de leer el archivo entero.
 - **Pendientes:** `docs/pendientes.md`. Revísalo si la HU aparece ahí; pregunta antes de implementar.
+- **Confianza:** `docs/confianza.md` (fórmula de `places.confidence`). Ábrelo si la HU toca el puntaje
+  (ingesta, propuestas, tarjetas, ficha, orden por confianza).
