@@ -134,6 +134,13 @@ export const osmSource: IngestSource = {
     const saved = await applySavePlan(db, plan, new Date());
     console.log(`osm: ${summarizeSave(saved)}`);
     for (const error of saved.errors) console.error(`osm: failed to save ${error}`);
-    if (saved.errors.length > 0) throw new Error(`${saved.errors.length} sites failed to save`);
+    return {
+      created: saved.created,
+      updated: saved.updated,
+      unchanged: saved.unchanged,
+      removed: saved.absorbed + saved.stalePlaces,
+      discarded: discarded.length + community.discarded.length,
+      errors: saved.errors,
+    };
   },
 };

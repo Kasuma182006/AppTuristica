@@ -3,7 +3,18 @@ import { selectSources } from "./cli";
 import type { IngestSource } from "./sources/types";
 
 function fakeSource(name: string): IngestSource {
-  return { name, description: `fuente ${name}`, run: async () => {} };
+  return {
+    name,
+    description: `fuente ${name}`,
+    run: async () => ({
+      created: 0,
+      updated: 0,
+      unchanged: 0,
+      removed: 0,
+      discarded: 0,
+      errors: [],
+    }),
+  };
 }
 
 const available = [fakeSource("osm"), fakeSource("rnt")];

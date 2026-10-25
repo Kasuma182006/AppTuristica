@@ -43,5 +43,13 @@ export const rntSource: IngestSource = {
     }
     await applyAgencyPlan(db, plan, new Date());
     console.log(`rnt: ${summarizeAgencyPlan(plan)}`);
+    return {
+      created: plan.creates.length,
+      updated: plan.updates.length,
+      unchanged: plan.unchangedIds.length,
+      removed: plan.inactivateIds.length,
+      discarded: download.invalid.length + plan.unknownMunicipality.length,
+      errors: [],
+    };
   },
 };
