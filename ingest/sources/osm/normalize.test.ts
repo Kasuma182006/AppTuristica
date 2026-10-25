@@ -20,6 +20,7 @@ const seedCatalog: Catalog = {
     placeTypes: [...a.placeTypes],
     osmTags: [...a.osmTags],
   })),
+  municipalities: new Map(),
 };
 
 function element(tags: Record<string, string>, overrides: Partial<OsmElement> = {}): OsmElement {

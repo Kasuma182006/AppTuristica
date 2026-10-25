@@ -88,9 +88,14 @@ export interface PhotoCandidate {
   height: number | null;
 }
 
-/** A site ready to save, with its photos (first = cover; at most five). */
+/** A site with its photos (first = cover; at most five). */
 export interface SiteWithPhotos extends EnrichedSite {
   photos: PhotoCandidate[];
+}
+
+/** A site with its template description (HU-29), ready for scoring and saving. */
+export interface DescribedSite extends SiteWithPhotos {
+  description: string;
 }
 
 /** A deduplicated site with its Wikidata data (null when OSM links no existing item). */
