@@ -114,11 +114,15 @@ export type DiscardReason =
   | "river-relation"
   // Minimum fields and location (HU-24).
   | "no-name"
+  // Only a type word or an abbreviation (HU-31), e.g. "Cerro" or "P.".
+  | "generic-name"
   // Infrastructure named like a tourist site (HU-26), e.g. a landfill's ponds.
   | "not-tourist"
   | "no-type"
   | "no-point"
-  | "outside-area";
+  | "outside-area"
+  // Same place as a published community site, which ingest never modifies (HU-31).
+  | "community-duplicate";
 
 /** A candidate left out of the run, logged with its reason. */
 export interface Discarded {

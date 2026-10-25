@@ -99,6 +99,12 @@ describe("deduplicate", () => {
       "Laguna de Sonso o del Chircal",
     );
 
+    const linked = site("way/9", { name: "Lago Calima", wikidataId: "Q1" });
+    const plain = site("node/5", { name: "Embalse Lago Calima", point: north(13) });
+    expect(deduplicate([plain, linked], noAreas([plain, linked])).sites[0]?.name).toBe(
+      "Lago Calima",
+    );
+
     const way = site("way/1");
     const node = site("node/7", { point: north(5) });
     expect(deduplicate([way, node], noAreas([way, node])).sites[0]?.elements[0]?.externalId).toBe(

@@ -12,6 +12,38 @@ const NON_TOURIST_NAME_PARTS: readonly string[] = [
   "ptar",
 ];
 
+// Names that only repeat a type word (e.g. "Cerro"), as slugs; such sites have no real name.
+// Extend the list when another one shows up.
+const GENERIC_NAMES: ReadonlySet<string> = new Set([
+  "cerro",
+  "pico",
+  "loma",
+  "volcan",
+  "mirador",
+  "torre-de-avistamiento",
+  "cascada",
+  "salto",
+  "rio",
+  "quebrada",
+  "lago",
+  "laguna",
+  "embalse",
+  "sendero",
+  "playa",
+  "balneario",
+  "charco",
+  "reserva",
+  "reserva-natural",
+]);
+// Shorter names are abbreviations, like the "P." of some peaks.
+const MIN_NAME_LETTERS = 4;
+
+/** Whether the name is only a type word or an abbreviation (HU-31), e.g. "Cerro" or "P.". */
+export function isGenericName(name: string): boolean {
+  const slug = slugify(name);
+  return slug.replaceAll("-", "").length < MIN_NAME_LETTERS || GENERIC_NAMES.has(slug);
+}
+
 /** Whether the name is of infrastructure, not a tourist site. Matches whole slug words. */
 export function isNonTouristName(name: string): boolean {
   const slug = `-${slugify(name)}-`;
@@ -21,6 +53,7 @@ export function isNonTouristName(name: string): boolean {
 /** The first missing minimum field, in this order, or null when the site is valid. */
 export function discardReasonOf(site: LocatedCandidate): DiscardReason | null {
   if (site.name === null) return "no-name";
+  if (isGenericName(site.name)) return "generic-name";
   if (isNonTouristName(site.name)) return "not-tourist";
   if (site.placeTypeSlug === null) return "no-type";
   if (site.point === null) return "no-point";
@@ -33,7 +66,10 @@ function isValid(site: LocatedCandidate): site is ValidSite {
   return discardReasonOf(site) === null;
 }
 
-/** Keeps the sites with name, type, point and municipality (HU-24); the rest get their reason. */
+/**
+ * Keeps the sites with a real name, type, point and municipality (HU-24); the rest get their
+ * reason.
+ */
 export function discardInvalid(sites: readonly LocatedCandidate[]): {
   valid: ValidSite[];
   discarded: Discarded[];

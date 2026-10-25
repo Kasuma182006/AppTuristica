@@ -1,10 +1,13 @@
 import { DEPARTMENTS } from "@db/seeds/departments";
 import { loadCatalog } from "../../catalog";
+import { discardCommunityDuplicates, loadCommunitySites } from "../../pipeline/community";
 import { scoreSites, summarizeConfidence } from "../../pipeline/confidence";
 import { deduplicate, formatMerge } from "../../pipeline/dedup";
 import { describeSites } from "../../pipeline/describe";
 import { assignMunicipalities, locatePoints } from "../../pipeline/municipality";
 import { applyRestrictions, findContainingAreas } from "../../pipeline/restrictions";
+import { applySavePlan, loadStoredState, summarizeSave } from "../../pipeline/save";
+import { planSave } from "../../pipeline/save-plan";
 import type { CandidatePlace, LocatedCandidate, RestrictedSite } from "../../pipeline/types";
 import { discardInvalid, formatDiscarded, summarizeDiscarded } from "../../pipeline/validate";
 import { attachPhotos, summarizePhotos } from "../commons";
@@ -43,7 +46,7 @@ export function summarizeRestrictions(sites: readonly RestrictedSite[]): string 
   return `${fragile} in protected areas (fragile), ${privateProperty} private property`;
 }
 
-// Tourist sites from OpenStreetMap, for every department in scope. Saving them arrives in HU-31.
+// Tourist sites from OpenStreetMap, for every department in scope, saved idempotently (HU-31).
 export const osmSource: IngestSource = {
   name: "osm",
   description: "sitios de OpenStreetMap",
@@ -104,8 +107,11 @@ export const osmSource: IngestSource = {
     );
     for (const merge of deduplicated.merges) console.log(`osm: merged ${formatMerge(merge)}`);
 
-    const wikidataIds = deduplicated.sites.flatMap((s) => (s.wikidataId ? [s.wikidataId] : []));
-    const enriched = attachWikidata(deduplicated.sites, await fetchWikidataItems(wikidataIds));
+    const community = discardCommunityDuplicates(deduplicated.sites, await loadCommunitySites(db));
+    for (const item of community.discarded) console.log(`osm: discarded ${formatDiscarded(item)}`);
+
+    const wikidataIds = community.kept.flatMap((s) => (s.wikidataId ? [s.wikidataId] : []));
+    const enriched = attachWikidata(community.kept, await fetchWikidataItems(wikidataIds));
     console.log(`osm: ${summarizeWikidata(enriched)}`);
 
     // A photo is taken in scope when it falls in a municipality (with the border tolerance).
@@ -123,5 +129,11 @@ export const osmSource: IngestSource = {
 
     const scored = scoreSites(described);
     console.log(`osm: ${summarizeConfidence(scored)}`);
+
+    const plan = planSave(scored, await loadStoredState(db), catalog);
+    const saved = await applySavePlan(db, plan, new Date());
+    console.log(`osm: ${summarizeSave(saved)}`);
+    for (const error of saved.errors) console.error(`osm: failed to save ${error}`);
+    if (saved.errors.length > 0) throw new Error(`${saved.errors.length} sites failed to save`);
   },
 };

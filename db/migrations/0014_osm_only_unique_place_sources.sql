@@ -1,0 +1,3 @@
+ALTER TABLE "place_sources" DROP CONSTRAINT "place_sources_source_external_id_unique";--> statement-breakpoint
+CREATE UNIQUE INDEX "place_sources_osm_external_id_unique" ON "place_sources" USING btree ("external_id") WHERE "place_sources"."source" = 'openstreetmap';--> statement-breakpoint
+ALTER TABLE "place_sources" ADD CONSTRAINT "place_sources_place_source_external_id_unique" UNIQUE("place_id","source","external_id");

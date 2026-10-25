@@ -4,6 +4,7 @@ import {
   discardInvalid,
   discardReasonOf,
   formatDiscarded,
+  isGenericName,
   isNonTouristName,
   summarizeDiscarded,
 } from "./validate";
@@ -106,6 +107,33 @@ describe("summarizeDiscarded", () => {
       ]),
     ).toBe("no-name: 3, canal: 1, outside-area: 1");
     expect(summarizeDiscarded([])).toBe("");
+  });
+});
+
+describe("isGenericName", () => {
+  it.each([
+    "P.",
+    "Cerro",
+    "PICO",
+    "Cascada",
+    "Mirador",
+    "Torre de avistamiento",
+    "Río",
+    "¿?",
+    "Ita",
+  ])("flags %s", (name) => {
+    expect(isGenericName(name)).toBe(true);
+  });
+
+  it.each(["Cerro de la Bandera", "Pico Pance", "Mirador de Dapa", "Lago Calima", "Dapa"])(
+    "keeps %s",
+    (name) => {
+      expect(isGenericName(name)).toBe(false);
+    },
+  );
+
+  it("discards generic names with the generic-name reason", () => {
+    expect(discardReasonOf(site({ name: "Cerro", placeTypeSlug: "cerro" }))).toBe("generic-name");
   });
 });
 

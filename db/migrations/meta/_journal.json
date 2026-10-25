@@ -99,6 +99,13 @@
       "when": 1792879929026,
       "tag": "0013_add_place_wikidata_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792895545995,
+      "tag": "0014_osm_only_unique_place_sources",
+      "breakpoints": true
     }
   ]
 }
