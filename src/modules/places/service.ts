@@ -1,4 +1,5 @@
 import { getDb } from "@/lib/db";
+import { APPROX_RADIUS_M, approximateLocation, roundCoordinate } from "@/lib/geo";
 import { SLUG_PATTERN } from "@/lib/slug";
 import { getCatalogs } from "@/modules/catalogs/service";
 import { findUnknownSlug, type ParseResult } from "./filters";
@@ -16,6 +17,7 @@ import {
   type OriginSlug,
   type Page,
   type PlaceDetail,
+  type PlaceLocation,
   type PlaceQuery,
   type PlaceSummary,
 } from "./types";
@@ -32,6 +34,20 @@ const slugByCost = new Map(
   Object.entries(COST_SLUGS).map(([slug, value]) => [value, slug as CostSlug]),
 ) as ReadonlyMap<Cost, CostSlug>;
 
+/** Exact for normal sites; the center of a ~2 km area for fragile ones (HU-39). */
+export function toPublicLocation(row: Pick<PlaceRow, "location" | "sensitivity">): PlaceLocation {
+  if (row.sensitivity === "fragile") {
+    const { lat, lng } = approximateLocation(row.location);
+    return { lat, lng, approximate: true, radiusM: APPROX_RADIUS_M };
+  }
+  return {
+    lat: roundCoordinate(row.location.lat),
+    lng: roundCoordinate(row.location.lng),
+    approximate: false,
+    radiusM: null,
+  };
+}
+
 /** Fields shared by search results and site pages, with Spanish filter values. */
 function toPublicFields(row: PlaceRow): Omit<PlaceSummary, "restricted"> {
   const origin = slugByOrigin.get(row.origin);
@@ -46,6 +62,7 @@ function toPublicFields(row: PlaceRow): Omit<PlaceSummary, "restricted"> {
     difficulty: row.difficulty ? (slugByDifficulty.get(row.difficulty) ?? null) : null,
     origin,
     confidence: row.confidence,
+    location: toPublicLocation(row),
   };
 }
 
@@ -78,6 +95,7 @@ export async function searchPlaces(query: PlaceQuery): Promise<ParseResult<Page<
 
 /** The public shape of a site page (HU-38): the summary plus description, photos and sources. */
 export function toPlaceDetail(row: PlaceDetailRow): PlaceDetail {
+  const fragile = row.sensitivity === "fragile";
   const lastSeen = Math.max(...row.sources.map((source) => source.lastSeenAt.getTime()));
 
   return {
@@ -87,11 +105,16 @@ export function toPlaceDetail(row: PlaceDetailRow): PlaceDetail {
     wikipediaUrl: row.wikipediaUrl,
     altitudeM: row.altitudeM,
     cost: row.cost ? (slugByCost.get(row.cost) ?? null) : null,
-    fragile: row.sensitivity === "fragile",
+    fragile,
     inProtectedArea: row.inProtectedArea,
     privateProperty: row.privateProperty,
-    photos: row.photos,
-    sources: row.sources.map(({ source, url }) => ({ source: SOURCE_NAMES[source], url })),
+    // Links to the OSM element, the Wikidata item or the Commons file would reveal the exact
+    // location of a fragile site.
+    photos: fragile ? row.photos.map((photo) => ({ ...photo, sourceUrl: null })) : row.photos,
+    sources: row.sources.map(({ source, url }) => ({
+      source: SOURCE_NAMES[source],
+      url: fragile ? null : url,
+    })),
     updatedAt: new Date(row.sources.length > 0 ? lastSeen : row.updatedAt.getTime()).toISOString(),
   };
 }

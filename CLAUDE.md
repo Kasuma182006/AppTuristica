@@ -37,6 +37,8 @@ Las páginas no consultan la base directamente: usan los services de `modules/`,
   **Y entre filtros, O dentro de un filtro múltiple.** Filtros, orden, página y vista siempre en la URL.
 - **No hay** búsqueda por texto libre ni filtros por distancia.
 - **Sitios frágiles:** nunca exponer coordenadas exactas (web ni API); usar aproximación ~2 km. "Cómo llegar" lleva solo al municipio.
+  La aproximación es el centro de una cuadrícula de 0,02° (`src/lib/geo.ts`, radio 2 km); sus fuentes y fotos
+  van sin enlace (el elemento de OSM, Wikidata o Commons delataría el punto). Usar siempre `toPublicLocation`.
 - **Sitios ocultos** (3 reportes) no aparecen en ninguna respuesta, conteo ni sitemap.
 - La ingesta es **idempotente**, **no modifica sitios de la comunidad** y **no reactiva sitios ocultos**.
 - Validación geográfica: todo sitio debe caer dentro del polígono del Valle; municipio asignado por cruce geográfico.
