@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import { FilterPanel } from "@/components/filter-panel";
+import { MunicipalityField, MunicipalityFieldSkeleton } from "@/components/municipality-field";
 
 /** HU-43 (RF-01): a short introduction and the filter panel, nothing else. */
 export default function HomePage() {
@@ -12,7 +14,11 @@ export default function HomePage() {
           Cascadas, ríos, senderos y miradores de los 42 municipios, con datos abiertos.
         </p>
       </header>
-      <FilterPanel />
+      <FilterPanel>
+        <Suspense fallback={<MunicipalityFieldSkeleton />}>
+          <MunicipalityField />
+        </Suspense>
+      </FilterPanel>
     </div>
   );
 }
