@@ -28,6 +28,7 @@ const place: PlaceDetail = {
   difficulty: null,
   origin: "abiertas",
   confidence: 30,
+  location: { lat: 3.451234, lng: -76.532101, approximate: false, radiusM: null },
   description: "Río en Cali.",
   wikidataDescription: null,
   wikipediaUrl: null,

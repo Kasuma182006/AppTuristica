@@ -43,7 +43,16 @@ export interface PlaceFilters {
   freeAccessOnly: boolean;
 }
 
-/** A site in search results: the card data (RF-05) without photo or location yet. */
+/** Where to draw a site: exact, or the center of a ~2 km area for fragile sites (HU-39). */
+export interface PlaceLocation {
+  lat: number;
+  lng: number;
+  approximate: boolean;
+  /** Radius of the area to draw when approximate; null for exact points. */
+  radiusM: number | null;
+}
+
+/** A site in search results: the card data (RF-05) without photo yet. */
 export interface PlaceSummary {
   slug: string;
   name: string;
@@ -56,6 +65,8 @@ export interface PlaceSummary {
   /** In a protected area or on private property. */
   restricted: boolean;
   confidence: number;
+  /** Never exact for fragile sites. */
+  location: PlaceLocation;
 }
 
 /** Values of the `orden` parameter (RF-07); the first one is the default. */
@@ -107,11 +118,11 @@ export interface PlacePhoto {
   author: string;
   license: string;
   licenseUrl: string | null;
-  /** The file's page at the source. */
-  sourceUrl: string;
+  /** The file's page at the source; null for fragile sites (it may reveal the location). */
+  sourceUrl: string | null;
 }
 
-/** Everything the site page shows (HU-38, RF-10 to RF-15), without location yet. */
+/** Everything the site page shows (HU-38, RF-10 to RF-15). */
 export interface PlaceDetail extends Omit<PlaceSummary, "restricted"> {
   /** Generated from templates or written by the community. */
   description: string | null;
@@ -125,7 +136,10 @@ export interface PlaceDetail extends Omit<PlaceSummary, "restricted"> {
   privateProperty: boolean;
   /** In gallery order; the first one is the cover. */
   photos: PlacePhoto[];
-  /** One per OSM element or Wikidata item; community sources have no link. */
+  /**
+   * One per OSM element or Wikidata item. No links for community sources, nor for fragile
+   * sites: the element would reveal the exact location (HU-39).
+   */
   sources: { source: (typeof SOURCE_NAMES)[PlaceSource]; url: string | null }[];
   /** Last time ingest still found the site (RF-15), or its last change. ISO 8601. */
   updatedAt: string;

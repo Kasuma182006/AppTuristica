@@ -9,6 +9,7 @@ import {
   placeTypes,
 } from "@db/schema";
 import type { Db } from "@/lib/db";
+import type { LngLat } from "@db/schema/geometry";
 import type { CatalogItem } from "@/modules/catalogs/types";
 import type {
   Cost,
@@ -34,6 +35,9 @@ export interface PlaceRow {
   inProtectedArea: boolean;
   privateProperty: boolean;
   confidence: number;
+  sensitivity: Sensitivity;
+  /** Exact: approximate it before exposing a fragile site. */
+  location: LngLat;
 }
 
 /** A site with everything its page shows (HU-38). */
@@ -43,7 +47,6 @@ export interface PlaceDetailRow extends PlaceRow {
   wikipediaUrl: string | null;
   altitudeM: number | null;
   cost: Cost | null;
-  sensitivity: Sensitivity;
   /** When the site row last changed; used when it has no sources. */
   updatedAt: Date;
   photos: PhotoRow[];
@@ -72,6 +75,8 @@ const SUMMARY_COLUMNS = {
   inProtectedArea: places.inProtectedArea,
   privateProperty: places.privateProperty,
   confidence: places.confidence,
+  sensitivity: places.sensitivity,
+  location: places.location,
 };
 
 /** Adds each site's activities, in the catalog's display order. */
@@ -177,7 +182,6 @@ export async function findPlaceBySlug(db: Db, slug: string): Promise<PlaceDetail
       wikipediaUrl: places.wikipediaUrl,
       altitudeM: places.altitudeM,
       cost: places.cost,
-      sensitivity: places.sensitivity,
       updatedAt: places.updatedAt,
     })
     .from(places)

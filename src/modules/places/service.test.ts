@@ -32,6 +32,8 @@ const row: PlaceRow = {
   inProtectedArea: false,
   privateProperty: false,
   confidence: 35,
+  sensitivity: "normal",
+  location: { lat: 3.6123456789, lng: -76.6987654321 },
 };
 
 describe("toPlaceSummary", () => {
@@ -46,6 +48,7 @@ describe("toPlaceSummary", () => {
       origin: "abiertas",
       restricted: false,
       confidence: 35,
+      location: { lat: 3.612346, lng: -76.698765, approximate: false, radiusM: null },
     });
   });
 
@@ -128,7 +131,6 @@ describe("toPlaceDetail", () => {
     wikipediaUrl: "https://es.wikipedia.org/wiki/Salto_de_Bitaco",
     altitudeM: 1450,
     cost: "free",
-    sensitivity: "fragile",
     inProtectedArea: true,
     updatedAt: new Date("2026-10-20T00:00:00Z"),
     photos: [
@@ -166,12 +168,13 @@ describe("toPlaceDetail", () => {
       difficulty: "moderada",
       origin: "abiertas",
       confidence: 35,
+      location: { lat: 3.612346, lng: -76.698765, approximate: false, radiusM: null },
       description: "Cascada en Dagua.",
       wikidataDescription: "cascada en Colombia",
       wikipediaUrl: "https://es.wikipedia.org/wiki/Salto_de_Bitaco",
       altitudeM: 1450,
       cost: "gratis",
-      fragile: true,
+      fragile: false,
       inProtectedArea: true,
       privateProperty: false,
       photos: detailRow.photos,
@@ -190,11 +193,10 @@ describe("toPlaceDetail", () => {
     expect(detail).not.toHaveProperty("restricted");
   });
 
-  it("maps paid sites, normal sites and missing data", () => {
+  it("maps paid sites and missing data", () => {
     const detail = toPlaceDetail({
       ...detailRow,
       cost: "paid",
-      sensitivity: "normal",
       altitudeM: null,
       wikidataDescription: null,
       wikipediaUrl: null,
@@ -202,7 +204,6 @@ describe("toPlaceDetail", () => {
 
     expect(detail).toMatchObject({
       cost: "pago",
-      fragile: false,
       altitudeM: null,
       wikidataDescription: null,
       wikipediaUrl: null,
@@ -245,4 +246,91 @@ describe("getPlace", () => {
       expect(findPlaceBySlug).not.toHaveBeenCalled();
     },
   );
+});
+
+describe("fragile sites (HU-39)", () => {
+  const fragileRow: PlaceRow = {
+    ...row,
+    sensitivity: "fragile",
+    inProtectedArea: true,
+    location: { lat: 3.45123, lng: -76.60871 },
+  };
+  const approximate = { lat: 3.45, lng: -76.61, approximate: true, radiusM: 2000 };
+
+  it("approximates the location in search results", () => {
+    expect(toPlaceSummary(fragileRow).location).toEqual(approximate);
+  });
+
+  it("never includes the exact coordinates anywhere in the response", () => {
+    const detail = toPlaceDetail({
+      ...fragileRow,
+      description: null,
+      wikidataDescription: null,
+      wikipediaUrl: null,
+      altitudeM: null,
+      cost: null,
+      updatedAt: new Date("2026-10-20T00:00:00Z"),
+      photos: [],
+      sources: [],
+    });
+    const json = JSON.stringify([toPlaceSummary(fragileRow), detail]);
+
+    expect(json).not.toContain("3.45123");
+    expect(json).not.toContain("76.60871");
+  });
+
+  it("drops the links to sources and photo pages, keeping the attribution", () => {
+    const detail = toPlaceDetail({
+      ...fragileRow,
+      description: null,
+      wikidataDescription: "río de Colombia",
+      wikipediaUrl: "https://es.wikipedia.org/wiki/R%C3%ADo_Cauca",
+      altitudeM: null,
+      cost: null,
+      updatedAt: new Date("2026-10-20T00:00:00Z"),
+      photos: [
+        {
+          url: "https://upload.wikimedia.org/a.jpg",
+          width: 800,
+          height: 600,
+          author: "Ana",
+          license: "CC BY-SA 4.0",
+          licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+          sourceUrl: "https://commons.wikimedia.org/wiki/File:A.jpg",
+        },
+      ],
+      sources: [
+        {
+          source: "openstreetmap",
+          url: "https://www.openstreetmap.org/node/1",
+          lastSeenAt: new Date("2026-10-25T03:00:00Z"),
+        },
+        {
+          source: "wikidata",
+          url: "https://www.wikidata.org/wiki/Q1",
+          lastSeenAt: new Date("2026-10-25T03:00:00Z"),
+        },
+      ],
+    });
+
+    expect(detail.fragile).toBe(true);
+    expect(detail.location).toEqual(approximate);
+    expect(detail.sources).toEqual([
+      { source: "openstreetmap", url: null },
+      { source: "wikidata", url: null },
+    ]);
+    expect(detail.photos).toEqual([
+      {
+        url: "https://upload.wikimedia.org/a.jpg",
+        width: 800,
+        height: 600,
+        author: "Ana",
+        license: "CC BY-SA 4.0",
+        licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+        sourceUrl: null,
+      },
+    ]);
+    // The article covers the whole river or lake, not the protected point.
+    expect(detail.wikipediaUrl).toBe("https://es.wikipedia.org/wiki/R%C3%ADo_Cauca");
+  });
 });

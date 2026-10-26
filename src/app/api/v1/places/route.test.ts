@@ -27,6 +27,7 @@ const place: PlaceSummary = {
   origin: "abiertas",
   restricted: false,
   confidence: 30,
+  location: { lat: 3.451234, lng: -76.532101, approximate: false, radiusM: null },
 };
 
 describe("GET /api/v1/places", () => {
