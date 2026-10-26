@@ -43,6 +43,11 @@ export interface PlaceFilters {
   freeAccessOnly: boolean;
 }
 
+/** A municipality for the Lugar filter, with its number of published sites (HU-44). */
+export interface MunicipalityOption extends CatalogItem {
+  placeCount: number;
+}
+
 /** Where to draw a site: exact, or the center of a ~2 km area for fragile sites (HU-39). */
 export interface PlaceLocation {
   lat: number;

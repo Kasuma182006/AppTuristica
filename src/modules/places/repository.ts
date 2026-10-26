@@ -225,3 +225,14 @@ export async function findPlaceBySlug(db: Db, slug: string): Promise<PlaceDetail
 
   return { ...withActs, photos: photoRows, sources: sourceRows };
 }
+
+/** Published sites per municipality slug (HU-44); municipalities without sites are absent. */
+export async function countPlacesByMunicipality(db: Db): Promise<Map<string, number>> {
+  const rows = await db
+    .select({ slug: municipalities.slug, total: count() })
+    .from(places)
+    .innerJoin(municipalities, eq(municipalities.id, places.municipalityId))
+    .where(isPublished)
+    .groupBy(municipalities.slug);
+  return new Map(rows.map((row) => [row.slug, row.total]));
+}

@@ -3,7 +3,13 @@ import { APPROX_RADIUS_M, approximateLocation, roundCoordinate } from "@/lib/geo
 import { SLUG_PATTERN } from "@/lib/slug";
 import { getCatalogs } from "@/modules/catalogs/service";
 import { findUnknownSlug, type ParseResult } from "./filters";
-import { findPlaceBySlug, findPlaces, type PlaceDetailRow, type PlaceRow } from "./repository";
+import {
+  countPlacesByMunicipality,
+  findPlaceBySlug,
+  findPlaces,
+  type PlaceDetailRow,
+  type PlaceRow,
+} from "./repository";
 import {
   COST_SLUGS,
   DIFFICULTY_SLUGS,
@@ -16,6 +22,7 @@ import {
   type Origin,
   type OriginSlug,
   type Page,
+  type MunicipalityOption,
   type PlaceDetail,
   type PlaceLocation,
   type PlaceQuery,
@@ -125,4 +132,13 @@ export async function getPlace(slug: string): Promise<PlaceDetail | undefined> {
 
   const row = await findPlaceBySlug(getDb(), slug);
   return row && toPlaceDetail(row);
+}
+
+/** Every municipality of the catalog, alphabetical, with its published sites (HU-44). */
+export async function getMunicipalityOptions(): Promise<MunicipalityOption[]> {
+  const [catalogs, counts] = await Promise.all([getCatalogs(), countPlacesByMunicipality(getDb())]);
+  return catalogs.municipalities.map((item) => ({
+    ...item,
+    placeCount: counts.get(item.slug) ?? 0,
+  }));
 }

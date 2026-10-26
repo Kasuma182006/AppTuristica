@@ -2,7 +2,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import { describe, expect, it } from "vitest";
 import * as schema from "@db/schema";
 import type { Db } from "@/lib/db";
-import { findPlaceBySlug, findPlaces } from "./repository";
+import { countPlacesByMunicipality, findPlaceBySlug, findPlaces } from "./repository";
 import type { PlaceFilters, PlaceQuery } from "./types";
 
 interface LoggedQuery {
@@ -98,6 +98,16 @@ describe("hidden sites never appear (HU-40)", () => {
 
     expect(queries).toHaveLength(1);
     expect(queries[0]?.params).toContain("rio-cali");
+    expect(queries.every(requiresPublished)).toBe(true);
+  });
+});
+
+describe("hidden sites are not counted (HU-40, HU-44)", () => {
+  it("the site count per municipality", async () => {
+    const queries = await sentQueries((db) => countPlacesByMunicipality(db));
+
+    expect(queries).toHaveLength(1);
+    expect(queries[0]?.sql).toMatch(/^select "municipalities"\."slug", count\(\*\) from "places"/);
     expect(queries.every(requiresPublished)).toBe(true);
   });
 });
