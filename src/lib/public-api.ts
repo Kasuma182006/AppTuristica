@@ -10,7 +10,7 @@ import {
 } from "@/lib/rate-limit";
 
 /** The API is public and read-only, without cookies: any site may call it from a browser. */
-const CORS_HEADERS = {
+export const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, OPTIONS",
   "Access-Control-Expose-Headers": "Retry-After",

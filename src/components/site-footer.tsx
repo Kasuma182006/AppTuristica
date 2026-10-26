@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 // Legal links are added in HU-92.
 export function SiteFooter() {
   return (
@@ -5,6 +7,11 @@ export function SiteFooter() {
       <div className="mx-auto w-full max-w-5xl px-4 py-6 text-sm text-muted">
         <p>Buscador turístico · Valle del Cauca, Colombia</p>
         <p className="mt-1">Proyecto personal sin ánimo de lucro, con datos abiertos.</p>
+        <p className="mt-3">
+          <Link href="/api-docs" className="underline underline-offset-4 hover:text-fg">
+            API abierta
+          </Link>
+        </p>
       </div>
     </footer>
   );
