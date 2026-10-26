@@ -1,8 +1,8 @@
-import { and, asc, eq, exists, inArray, isNull, or, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, exists, inArray, isNull, or, type SQL } from "drizzle-orm";
 import { activities, municipalities, placeActivities, places, placeTypes } from "@db/schema";
 import type { Db } from "@/lib/db";
 import type { CatalogItem } from "@/modules/catalogs/types";
-import type { Difficulty, Origin, PlaceFilters } from "./types";
+import type { Difficulty, Origin, PlaceFilters, PlaceQuery, PlaceSort } from "./types";
 
 /** A matching site as stored, before mapping to the public shape. */
 export interface PlaceRow {
@@ -51,9 +51,28 @@ function filterConditions(db: Db, filters: PlaceFilters): SQL[] {
   return conditions;
 }
 
-/** Published sites matching the filters, by name, with their activities. */
-export async function findPlaces(db: Db, filters: PlaceFilters): Promise<PlaceRow[]> {
-  const rows = await db
+/** Ties break by name, then id, so pages never overlap. */
+const ORDER_BY: Record<PlaceSort, SQL[]> = {
+  confianza: [desc(places.confidence), asc(places.name), asc(places.id)],
+  recientes: [desc(places.createdAt), asc(places.name), asc(places.id)],
+  alfabetico: [asc(places.name), asc(places.id)],
+};
+
+/** One page of published sites matching the filters, with their activities and the total. */
+export async function findPlaces(
+  db: Db,
+  { filters, sort, page, pageSize }: PlaceQuery,
+): Promise<{ rows: PlaceRow[]; total: number }> {
+  const where = and(...filterConditions(db, filters));
+
+  const countQuery = db
+    .select({ total: count() })
+    .from(places)
+    .innerJoin(municipalities, eq(municipalities.id, places.municipalityId))
+    .innerJoin(placeTypes, eq(placeTypes.id, places.placeTypeId))
+    .where(where);
+
+  const pageQuery = db
     .select({
       id: places.id,
       slug: places.slug,
@@ -69,9 +88,14 @@ export async function findPlaces(db: Db, filters: PlaceFilters): Promise<PlaceRo
     .from(places)
     .innerJoin(municipalities, eq(municipalities.id, places.municipalityId))
     .innerJoin(placeTypes, eq(placeTypes.id, places.placeTypeId))
-    .where(and(...filterConditions(db, filters)))
-    .orderBy(asc(places.name), asc(places.id));
-  if (rows.length === 0) return [];
+    .where(where)
+    .orderBy(...ORDER_BY[sort])
+    .limit(pageSize)
+    .offset((page - 1) * pageSize);
+
+  const [[counted], rows] = await Promise.all([countQuery, pageQuery]);
+  const total = counted?.total ?? 0;
+  if (rows.length === 0) return { rows: [], total };
 
   const activityRows = await db
     .select({ placeId: placeActivities.placeId, slug: activities.slug, name: activities.name })
@@ -86,8 +110,11 @@ export async function findPlaces(db: Db, filters: PlaceFilters): Promise<PlaceRo
     .orderBy(asc(activities.sortOrder), asc(activities.id));
 
   const activitiesByPlace = Map.groupBy(activityRows, (row) => row.placeId);
-  return rows.map((row) => ({
-    ...row,
-    activities: (activitiesByPlace.get(row.id) ?? []).map(({ slug, name }) => ({ slug, name })),
-  }));
+  return {
+    rows: rows.map((row) => ({
+      ...row,
+      activities: (activitiesByPlace.get(row.id) ?? []).map(({ slug, name }) => ({ slug, name })),
+    })),
+    total,
+  };
 }

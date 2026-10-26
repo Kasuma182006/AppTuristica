@@ -1,16 +1,16 @@
 import { NextRequest } from "next/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ParseResult } from "@/modules/places/filters";
-import type { PlaceFilters, PlaceSummary } from "@/modules/places/types";
+import type { Page, PlaceQuery, PlaceSummary } from "@/modules/places/types";
 
-const searchPlaces = vi.fn<(filters: PlaceFilters) => Promise<ParseResult<PlaceSummary[]>>>();
+const searchPlaces = vi.fn<(query: PlaceQuery) => Promise<ParseResult<Page<PlaceSummary>>>>();
 
 vi.mock("next/server", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/server")>()),
   connection: () => Promise.resolve(),
 }));
 vi.mock("@/modules/places/service", () => ({
-  searchPlaces: (filters: PlaceFilters) => searchPlaces(filters),
+  searchPlaces: (query: PlaceQuery) => searchPlaces(query),
 }));
 
 const { GET } = await import("./route");
@@ -35,15 +35,26 @@ describe("GET /api/v1/places", () => {
     searchPlaces.mockReset();
   });
 
-  it("returns the matching sites wrapped in data", async () => {
-    searchPlaces.mockResolvedValueOnce({ ok: true, value: [place] });
+  it("returns one page of sites in data and the totals in meta", async () => {
+    searchPlaces.mockResolvedValueOnce({
+      ok: true,
+      value: { items: [place], total: 25, page: 2, pageSize: 24, totalPages: 2 },
+    });
 
-    const response = await get("?lugar=cali&tipo=rio,cascada");
+    const response = await get("?lugar=cali&tipo=rio,cascada&orden=recientes&pagina=2");
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ data: [place] });
+    expect(await response.json()).toEqual({
+      data: [place],
+      meta: { total: 25, page: 2, pageSize: 24, totalPages: 2 },
+    });
     expect(searchPlaces).toHaveBeenCalledWith(
-      expect.objectContaining({ municipality: "cali", placeTypes: ["rio", "cascada"] }),
+      expect.objectContaining({
+        filters: expect.objectContaining({ municipality: "cali", placeTypes: ["rio", "cascada"] }),
+        sort: "recientes",
+        page: 2,
+        pageSize: 24,
+      }),
     );
   });
 
@@ -58,6 +69,15 @@ describe("GET /api/v1/places", () => {
       },
     });
     expect(searchPlaces).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 for an invalid page", async () => {
+    const response = await get("?pagina=0");
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({
+      error: { code: "bad_request", message: "pagina: debe ser 1 o más." },
+    });
   });
 
   it("returns 400 for a slug missing from the catalogs", async () => {
