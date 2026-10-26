@@ -9,7 +9,8 @@ import {
   type DifficultySlug,
   type Origin,
   type OriginSlug,
-  type PlaceFilters,
+  type Page,
+  type PlaceQuery,
   type PlaceSummary,
 } from "./types";
 
@@ -40,13 +41,23 @@ export function toPlaceSummary(row: PlaceRow): PlaceSummary {
 }
 
 /**
- * Published sites matching the filters (HU-36), for the web and `GET /api/v1/places`.
- * Fails when a filter names a municipality, type or activity that does not exist.
+ * One page of published sites matching the filters (HU-36, HU-37), for the web and
+ * `GET /api/v1/places`. Fails when a filter names a municipality, type or activity that does
+ * not exist.
  */
-export async function searchPlaces(filters: PlaceFilters): Promise<ParseResult<PlaceSummary[]>> {
-  const unknown = findUnknownSlug(filters, await getCatalogs());
+export async function searchPlaces(query: PlaceQuery): Promise<ParseResult<Page<PlaceSummary>>> {
+  const unknown = findUnknownSlug(query.filters, await getCatalogs());
   if (unknown) return { ok: false, message: unknown };
 
-  const rows = await findPlaces(getDb(), filters);
-  return { ok: true, value: rows.map(toPlaceSummary) };
+  const { rows, total } = await findPlaces(getDb(), query);
+  return {
+    ok: true,
+    value: {
+      items: rows.map(toPlaceSummary),
+      total,
+      page: query.page,
+      pageSize: query.pageSize,
+      totalPages: Math.ceil(total / query.pageSize),
+    },
+  };
 }

@@ -51,3 +51,28 @@ export interface PlaceSummary {
   restricted: boolean;
   confidence: number;
 }
+
+/** Values of the `orden` parameter (RF-07); the first one is the default. */
+export const SORT_SLUGS = ["confianza", "recientes", "alfabetico"] as const;
+
+export type PlaceSort = (typeof SORT_SLUGS)[number];
+
+export const PAGE_SIZE = { default: 24, max: 100 } as const;
+
+/** What to fetch: the filters plus order and page (HU-37). Pages start at 1. */
+export interface PlaceQuery {
+  filters: PlaceFilters;
+  sort: PlaceSort;
+  page: number;
+  pageSize: number;
+}
+
+/** One page of results; a page past the last one is empty. */
+export interface Page<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  /** 0 when nothing matches. */
+  totalPages: number;
+}

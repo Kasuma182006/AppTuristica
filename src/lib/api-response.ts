@@ -3,6 +3,18 @@ export function apiData<T>(data: T, init?: ResponseInit): Response {
   return Response.json({ data }, init);
 }
 
+export interface PageMeta {
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+/** Paginated lists add `meta` next to `data`. */
+export function apiPage<T>(items: T[], meta: PageMeta, init?: ResponseInit): Response {
+  return Response.json({ data: items, meta }, init);
+}
+
 export type ApiErrorCode = "bad_request" | "not_found" | "rate_limited" | "internal_error";
 
 /** API errors share one shape: `{ error: { code, message } }` (message in Spanish). */

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Catalogs } from "@/modules/catalogs/types";
-import { findUnknownSlug, parsePlaceFilters } from "./filters";
+import { findUnknownSlug, parsePlaceFilters, parsePlaceQuery } from "./filters";
 
 const parse = (query: string) => parsePlaceFilters(new URLSearchParams(query));
 
@@ -74,6 +74,62 @@ describe("parsePlaceFilters", () => {
     ["tipo=cascada&tipo=rio", "tipo: aparece más de una vez; separa los valores con comas."],
   ])("rejects %s", (query, message) => {
     expect(parse(query)).toEqual({ ok: false, message });
+  });
+});
+
+describe("parsePlaceQuery", () => {
+  const query = (search: string) => parsePlaceQuery(new URLSearchParams(search));
+
+  it("defaults to highest confidence, page 1 and 24 sites per page", () => {
+    expect(query("")).toMatchObject({
+      ok: true,
+      value: { sort: "confianza", page: 1, pageSize: 24 },
+    });
+  });
+
+  it("reads the order, page and page size with the filters", () => {
+    expect(query("tipo=cascada&orden=recientes&pagina=3&por-pagina=100")).toMatchObject({
+      ok: true,
+      value: {
+        filters: { placeTypes: ["cascada"] },
+        sort: "recientes",
+        page: 3,
+        pageSize: 100,
+      },
+    });
+  });
+
+  it("accepts every order", () => {
+    for (const sort of ["confianza", "recientes", "alfabetico"]) {
+      expect(query(`orden=${sort}`)).toMatchObject({ ok: true, value: { sort } });
+    }
+  });
+
+  it("ignores empty order and page parameters", () => {
+    expect(query("orden=&pagina=")).toMatchObject({
+      ok: true,
+      value: { sort: "confianza", page: 1 },
+    });
+  });
+
+  it("reports filter errors first", () => {
+    expect(query("tipo=Rio&pagina=0")).toEqual({
+      ok: false,
+      message: 'tipo: "Rio" no es un valor válido.',
+    });
+  });
+
+  it.each([
+    ["orden=distancia", 'orden: "distancia" no es válido; usa confianza, recientes, alfabetico.'],
+    ["pagina=0", "pagina: debe ser 1 o más."],
+    ["pagina=-1", 'pagina: "-1" no es un valor válido.'],
+    ["pagina=1.5", 'pagina: "1.5" no es un valor válido.'],
+    ["pagina=dos", 'pagina: "dos" no es un valor válido.'],
+    ["por-pagina=0", "por-pagina: debe ser 1 o más."],
+    ["por-pagina=101", "por-pagina: el máximo es 100."],
+    ["pagina=1&pagina=2", "pagina: aparece más de una vez."],
+  ])("rejects %s", (search, message) => {
+    expect(query(search)).toEqual({ ok: false, message });
   });
 });
 
