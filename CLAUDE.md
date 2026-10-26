@@ -40,6 +40,8 @@ Las páginas no consultan la base directamente: usan los services de `modules/`,
   La aproximación es el centro de una cuadrícula de 0,02° (`src/lib/geo.ts`, radio 2 km); sus fuentes y fotos
   van sin enlace (el elemento de OSM, Wikidata o Commons delataría el punto). Usar siempre `toPublicLocation`.
 - **Sitios ocultos** (3 reportes) no aparecen en ninguna respuesta, conteo ni sitemap.
+  Toda consulta pública de `places` lleva `isPublished` (`src/modules/places/repository.ts`) como término
+  AND; `repository.test.ts` lo verifica sobre el SQL generado. Al agregar consultas (sitemap, conteos), probarlas ahí.
 - La ingesta es **idempotente**, **no modifica sitios de la comunidad** y **no reactiva sitios ocultos**.
 - Validación geográfica: todo sitio debe caer dentro del polígono del Valle; municipio asignado por cruce geográfico.
 - Propuestas: anónimas, sin fotos, Turnstile verificado en servidor, publicación inmediata con origen "comunidad".
