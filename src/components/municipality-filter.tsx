@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useRef, useState, type KeyboardEvent } from "react";
-import type { MunicipalityOption } from "@/modules/places/types";
+import type { FilterOption } from "@/modules/places/types";
 import {
   matchByWordStart,
   moveActive,
@@ -16,7 +16,7 @@ const fieldClass =
   "h-11 w-full rounded-md border border-border bg-bg px-3 text-base text-fg placeholder:text-muted";
 
 interface Props {
-  options: MunicipalityOption[];
+  options: FilterOption[];
 }
 
 /**
@@ -28,7 +28,7 @@ export function MunicipalityFilter({ options }: Props) {
   const listId = `${id}-list`;
   const hintId = `${id}-hint`;
   const [query, setQuery] = useState("");
-  const [selected, setSelected] = useState<MunicipalityOption>();
+  const [selected, setSelected] = useState<FilterOption>();
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -37,7 +37,7 @@ export function MunicipalityFilter({ options }: Props) {
   const suggestions = selected ? options : matchByWordStart(options, query);
   const activeOption = open ? suggestions[active] : undefined;
 
-  function choose(option: MunicipalityOption) {
+  function choose(option: FilterOption) {
     setSelected(option);
     setQuery(option.name);
     setOpen(false);
