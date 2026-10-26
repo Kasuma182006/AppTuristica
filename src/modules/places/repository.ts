@@ -105,10 +105,15 @@ async function withActivities<T extends { id: number }>(
   }));
 }
 
+/**
+ * Hidden sites (3 reports, HU-40) never appear in any response, count or sitemap: every
+ * public query on `places` includes this condition (repository.test.ts checks it).
+ */
+export const isPublished: SQL = eq(places.status, "published");
+
 /** SQL conditions for the filters: AND between filters, OR within each list (RF-03). */
 function filterConditions(db: Db, filters: PlaceFilters): SQL[] {
-  // Hidden sites (3 reports) never appear in any response.
-  const conditions: SQL[] = [eq(places.status, "published")];
+  const conditions: SQL[] = [isPublished];
 
   if (filters.municipality) conditions.push(eq(municipalities.slug, filters.municipality));
   if (filters.placeTypes) conditions.push(inArray(placeTypes.slug, filters.placeTypes));
@@ -187,8 +192,7 @@ export async function findPlaceBySlug(db: Db, slug: string): Promise<PlaceDetail
     .from(places)
     .innerJoin(municipalities, eq(municipalities.id, places.municipalityId))
     .innerJoin(placeTypes, eq(placeTypes.id, places.placeTypeId))
-    // Hidden sites (3 reports) never appear in any response.
-    .where(and(eq(places.slug, slug), eq(places.status, "published")));
+    .where(and(eq(places.slug, slug), isPublished));
   if (!row) return undefined;
 
   const [[withActs], photoRows, sourceRows] = await Promise.all([

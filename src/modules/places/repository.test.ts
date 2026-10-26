@@ -1,0 +1,135 @@
+import { drizzle } from "drizzle-orm/postgres-js";
+import { describe, expect, it } from "vitest";
+import * as schema from "@db/schema";
+import type { Db } from "@/lib/db";
+import { findPlaceBySlug, findPlaces } from "./repository";
+import type { PlaceFilters, PlaceQuery } from "./types";
+
+interface LoggedQuery {
+  sql: string;
+  params: unknown[];
+}
+
+/**
+ * Runs a repository call against a database without a connection and returns the queries it
+ * sent. The first query fails (nothing answers it), so only queries sent up to then are logged.
+ */
+async function sentQueries(call: (db: Db) => Promise<unknown>): Promise<LoggedQuery[]> {
+  const queries: LoggedQuery[] = [];
+  const db = drizzle.mock({
+    schema,
+    logger: { logQuery: (sql, params) => queries.push({ sql, params }) },
+  });
+  await call(db as unknown as Db).catch(() => undefined);
+  return queries;
+}
+
+/** The `where` clause of a query, up to its order or limit. */
+function whereClause(sql: string): string {
+  const where = sql.slice(sql.indexOf(" where ") + " where ".length);
+  return where.split(/ order by | limit /)[0] ?? where;
+}
+
+/** The where clause without its nested groups, e.g. "(a and (b or c))" → "a and ". */
+function topLevelTerms(where: string): string {
+  if (!where.startsWith("(")) return where;
+  let depth = 0;
+  let terms = "";
+  for (const char of where) {
+    if (char === "(") depth++;
+    else if (char === ")") depth--;
+    else if (depth === 1) terms += char;
+  }
+  return terms;
+}
+
+/**
+ * True when every row must have `status = 'published'`: the condition is a top-level AND term
+ * (Drizzle renders and(a, b) as "(a and b)"), not inside an OR that would let hidden sites in.
+ */
+function requiresPublished({ sql, params }: LoggedQuery): boolean {
+  const terms = topLevelTerms(whereClause(sql));
+  const match = /"places"\."status" = \$(\d+)/.exec(terms);
+  return !terms.includes(" or ") && params[Number(match?.[1]) - 1] === "published";
+}
+
+const query = (filters: Partial<PlaceFilters> = {}): PlaceQuery => ({
+  filters: { freeAccessOnly: false, ...filters },
+  sort: "confianza",
+  page: 1,
+  pageSize: 24,
+});
+
+describe("hidden sites never appear (HU-40)", () => {
+  const filterCases: [string, Partial<PlaceFilters>][] = [
+    ["no filters", {}],
+    ["lugar", { municipality: "dagua" }],
+    ["tipo", { placeTypes: ["cascada", "rio"] }],
+    ["actividad", { activities: ["senderismo"] }],
+    ["dificultad", { difficulties: ["easy", null] }],
+    ["sin dato only", { difficulties: [null] }],
+    ["origen", { origins: ["community"] }],
+    ["acceso", { freeAccessOnly: true }],
+    [
+      "every filter",
+      {
+        municipality: "dagua",
+        placeTypes: ["cascada"],
+        activities: ["senderismo", "fotografia"],
+        difficulties: ["moderate", null],
+        origins: ["open_data", "community"],
+        freeAccessOnly: true,
+      },
+    ],
+  ];
+
+  it.each(filterCases)("search results and their count with %s", async (_label, filters) => {
+    const queries = await sentQueries((db) => findPlaces(db, query(filters)));
+    const [count, page] = queries;
+
+    expect(queries).toHaveLength(2);
+    expect(count?.sql).toMatch(/^select count\(\*\) from "places"/);
+    expect(page?.sql).toMatch(/ from "places" /);
+    expect(queries.every(requiresPublished)).toBe(true);
+  });
+
+  it("the site page", async () => {
+    const queries = await sentQueries((db) => findPlaceBySlug(db, "rio-cali"));
+
+    expect(queries).toHaveLength(1);
+    expect(queries[0]?.params).toContain("rio-cali");
+    expect(queries.every(requiresPublished)).toBe(true);
+  });
+});
+
+describe("requiresPublished", () => {
+  const check = (sql: string, params: unknown[] = ["published"]) =>
+    requiresPublished({ sql, params });
+
+  it("accepts the condition alone or ANDed with others", () => {
+    expect(check(`select 1 from "places" where "places"."status" = $1 limit $2`)).toBe(true);
+    expect(
+      check(`select 1 from "places" where ("places"."slug" = $1 and "places"."status" = $2)`, [
+        "rio-cali",
+        "published",
+      ]),
+    ).toBe(true);
+    expect(
+      check(
+        `select 1 from "places" where ("places"."status" = $1 and ("places"."difficulty" in ($2) or "places"."difficulty" is null))`,
+        ["published", "easy"],
+      ),
+    ).toBe(true);
+  });
+
+  it("rejects a missing condition, another status or an OR around it", () => {
+    expect(check(`select 1 from "places" where "places"."slug" = $1`, ["rio-cali"])).toBe(false);
+    expect(check(`select 1 from "places" where "places"."status" = $1`, ["hidden"])).toBe(false);
+    expect(
+      check(`select 1 from "places" where ("places"."status" = $1 or "places"."slug" = $2)`, [
+        "published",
+        "rio-cali",
+      ]),
+    ).toBe(false);
+  });
+});
