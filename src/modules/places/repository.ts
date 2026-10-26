@@ -1,8 +1,25 @@
 import { and, asc, count, desc, eq, exists, inArray, isNull, or, type SQL } from "drizzle-orm";
-import { activities, municipalities, placeActivities, places, placeTypes } from "@db/schema";
+import {
+  activities,
+  municipalities,
+  photos,
+  placeActivities,
+  places,
+  placeSources,
+  placeTypes,
+} from "@db/schema";
 import type { Db } from "@/lib/db";
 import type { CatalogItem } from "@/modules/catalogs/types";
-import type { Difficulty, Origin, PlaceFilters, PlaceQuery, PlaceSort } from "./types";
+import type {
+  Cost,
+  Difficulty,
+  Origin,
+  PlaceFilters,
+  PlaceQuery,
+  PlaceSort,
+  PlaceSource,
+  Sensitivity,
+} from "./types";
 
 /** A matching site as stored, before mapping to the public shape. */
 export interface PlaceRow {
@@ -17,6 +34,70 @@ export interface PlaceRow {
   inProtectedArea: boolean;
   privateProperty: boolean;
   confidence: number;
+}
+
+/** A site with everything its page shows (HU-38). */
+export interface PlaceDetailRow extends PlaceRow {
+  description: string | null;
+  wikidataDescription: string | null;
+  wikipediaUrl: string | null;
+  altitudeM: number | null;
+  cost: Cost | null;
+  sensitivity: Sensitivity;
+  /** When the site row last changed; used when it has no sources. */
+  updatedAt: Date;
+  photos: PhotoRow[];
+  /** OSM elements first, then Wikidata, then the community. */
+  sources: { source: PlaceSource; url: string | null; lastSeenAt: Date }[];
+}
+
+export interface PhotoRow {
+  url: string;
+  width: number | null;
+  height: number | null;
+  author: string;
+  license: string;
+  licenseUrl: string | null;
+  sourceUrl: string;
+}
+
+const SUMMARY_COLUMNS = {
+  id: places.id,
+  slug: places.slug,
+  name: places.name,
+  municipality: { slug: municipalities.slug, name: municipalities.name },
+  placeType: { slug: placeTypes.slug, name: placeTypes.name },
+  difficulty: places.difficulty,
+  origin: places.origin,
+  inProtectedArea: places.inProtectedArea,
+  privateProperty: places.privateProperty,
+  confidence: places.confidence,
+};
+
+/** Adds each site's activities, in the catalog's display order. */
+async function withActivities<T extends { id: number }>(
+  db: Db,
+  rows: T[],
+): Promise<(T & { activities: CatalogItem[] })[]> {
+  if (rows.length === 0) return [];
+
+  const activityRows = await db
+    .select({ placeId: placeActivities.placeId, slug: activities.slug, name: activities.name })
+    .from(placeActivities)
+    .innerJoin(activities, eq(activities.id, placeActivities.activityId))
+    .where(
+      inArray(
+        placeActivities.placeId,
+        rows.map((row) => row.id),
+      ),
+    )
+    .orderBy(asc(activities.sortOrder), asc(activities.id));
+
+  const activitiesByPlace = Map.groupBy(activityRows, (row) => row.placeId);
+  return rows.map((row) => ({
+    ...row,
+    activities: (activitiesByPlace.get(row.id) ?? []).map(({ slug, name }) => ({ slug, name })),
+  }));
 }
 
 /** SQL conditions for the filters: AND between filters, OR within each list (RF-03). */
@@ -73,18 +154,7 @@ export async function findPlaces(
     .where(where);
 
   const pageQuery = db
-    .select({
-      id: places.id,
-      slug: places.slug,
-      name: places.name,
-      municipality: { slug: municipalities.slug, name: municipalities.name },
-      placeType: { slug: placeTypes.slug, name: placeTypes.name },
-      difficulty: places.difficulty,
-      origin: places.origin,
-      inProtectedArea: places.inProtectedArea,
-      privateProperty: places.privateProperty,
-      confidence: places.confidence,
-    })
+    .select(SUMMARY_COLUMNS)
     .from(places)
     .innerJoin(municipalities, eq(municipalities.id, places.municipalityId))
     .innerJoin(placeTypes, eq(placeTypes.id, places.placeTypeId))
@@ -94,27 +164,56 @@ export async function findPlaces(
     .offset((page - 1) * pageSize);
 
   const [[counted], rows] = await Promise.all([countQuery, pageQuery]);
-  const total = counted?.total ?? 0;
-  if (rows.length === 0) return { rows: [], total };
+  return { rows: await withActivities(db, rows), total: counted?.total ?? 0 };
+}
 
-  const activityRows = await db
-    .select({ placeId: placeActivities.placeId, slug: activities.slug, name: activities.name })
-    .from(placeActivities)
-    .innerJoin(activities, eq(activities.id, placeActivities.activityId))
-    .where(
-      inArray(
-        placeActivities.placeId,
-        rows.map((row) => row.id),
-      ),
-    )
-    .orderBy(asc(activities.sortOrder), asc(activities.id));
+/** A published site with its activities, photos and sources; undefined when missing or hidden. */
+export async function findPlaceBySlug(db: Db, slug: string): Promise<PlaceDetailRow | undefined> {
+  const [row] = await db
+    .select({
+      ...SUMMARY_COLUMNS,
+      description: places.description,
+      wikidataDescription: places.wikidataDescription,
+      wikipediaUrl: places.wikipediaUrl,
+      altitudeM: places.altitudeM,
+      cost: places.cost,
+      sensitivity: places.sensitivity,
+      updatedAt: places.updatedAt,
+    })
+    .from(places)
+    .innerJoin(municipalities, eq(municipalities.id, places.municipalityId))
+    .innerJoin(placeTypes, eq(placeTypes.id, places.placeTypeId))
+    // Hidden sites (3 reports) never appear in any response.
+    .where(and(eq(places.slug, slug), eq(places.status, "published")));
+  if (!row) return undefined;
 
-  const activitiesByPlace = Map.groupBy(activityRows, (row) => row.placeId);
-  return {
-    rows: rows.map((row) => ({
-      ...row,
-      activities: (activitiesByPlace.get(row.id) ?? []).map(({ slug, name }) => ({ slug, name })),
-    })),
-    total,
-  };
+  const [[withActs], photoRows, sourceRows] = await Promise.all([
+    withActivities(db, [row]),
+    db
+      .select({
+        url: photos.url,
+        width: photos.width,
+        height: photos.height,
+        author: photos.author,
+        license: photos.license,
+        licenseUrl: photos.licenseUrl,
+        sourceUrl: photos.sourceUrl,
+      })
+      .from(photos)
+      .where(eq(photos.placeId, row.id))
+      .orderBy(asc(photos.sortOrder), asc(photos.id)),
+    db
+      .select({
+        source: placeSources.source,
+        url: placeSources.url,
+        lastSeenAt: placeSources.lastSeenAt,
+      })
+      .from(placeSources)
+      .where(eq(placeSources.placeId, row.id))
+      // Enum order: openstreetmap, wikidata, community.
+      .orderBy(asc(placeSources.source), asc(placeSources.externalId), asc(placeSources.id)),
+  ]);
+  if (!withActs) return undefined;
+
+  return { ...withActs, photos: photoRows, sources: sourceRows };
 }

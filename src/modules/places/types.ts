@@ -1,4 +1,10 @@
-import type { difficultyEnum, originEnum } from "@db/schema";
+import type {
+  costEnum,
+  difficultyEnum,
+  originEnum,
+  placeSourceEnum,
+  sensitivityEnum,
+} from "@db/schema";
 import type { CatalogItem } from "@/modules/catalogs/types";
 
 export type Difficulty = (typeof difficultyEnum.enumValues)[number];
@@ -75,4 +81,52 @@ export interface Page<T> {
   pageSize: number;
   /** 0 when nothing matches. */
   totalPages: number;
+}
+
+export type Cost = (typeof costEnum.enumValues)[number];
+export type Sensitivity = (typeof sensitivityEnum.enumValues)[number];
+export type PlaceSource = (typeof placeSourceEnum.enumValues)[number];
+
+/** Spanish values of the entrance cost. */
+export const COST_SLUGS = { gratis: "free", pago: "paid" } as const satisfies Record<string, Cost>;
+
+export type CostSlug = keyof typeof COST_SLUGS;
+
+/** Source names in API responses: OSM and Wikidata keep their own, the community is Spanish. */
+export const SOURCE_NAMES = {
+  openstreetmap: "openstreetmap",
+  wikidata: "wikidata",
+  community: "comunidad",
+} as const satisfies Record<PlaceSource, string>;
+
+/** A Wikimedia Commons photo with the attribution shown under it (RF-11). */
+export interface PlacePhoto {
+  url: string;
+  width: number | null;
+  height: number | null;
+  author: string;
+  license: string;
+  licenseUrl: string | null;
+  /** The file's page at the source. */
+  sourceUrl: string;
+}
+
+/** Everything the site page shows (HU-38, RF-10 to RF-15), without location yet. */
+export interface PlaceDetail extends Omit<PlaceSummary, "restricted"> {
+  /** Generated from templates or written by the community. */
+  description: string | null;
+  /** Wikidata's short description (CC0): show it as Wikidata's, never as the site's. */
+  wikidataDescription: string | null;
+  wikipediaUrl: string | null;
+  altitudeM: number | null;
+  cost: CostSlug | null;
+  fragile: boolean;
+  inProtectedArea: boolean;
+  privateProperty: boolean;
+  /** In gallery order; the first one is the cover. */
+  photos: PlacePhoto[];
+  /** One per OSM element or Wikidata item; community sources have no link. */
+  sources: { source: (typeof SOURCE_NAMES)[PlaceSource]; url: string | null }[];
+  /** Last time ingest still found the site (RF-15), or its last change. ISO 8601. */
+  updatedAt: string;
 }
