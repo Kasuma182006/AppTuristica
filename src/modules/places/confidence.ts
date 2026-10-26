@@ -1,6 +1,7 @@
-import type { costEnum, difficultyEnum, placeSourceEnum } from "@db/schema";
+import type { costEnum, difficultyEnum } from "@db/schema";
+import type { PlaceSource } from "./types";
 
-export type PlaceSource = (typeof placeSourceEnum.enumValues)[number];
+export type { PlaceSource };
 
 /** What the confidence score looks at; the same for ingested and community sites. */
 export interface ConfidenceInput {

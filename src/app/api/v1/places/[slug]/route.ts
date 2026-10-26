@@ -1,0 +1,21 @@
+import { connection, type NextRequest } from "next/server";
+import { apiData, apiError } from "@/lib/api-response";
+import { getPlace } from "@/modules/places/service";
+
+/** HU-38 (RF-27): a published site with its photos, sources and activities. */
+export async function GET(
+  _request: NextRequest,
+  { params }: RouteContext<"/api/v1/places/[slug]">,
+): Promise<Response> {
+  await connection();
+  const { slug } = await params;
+
+  try {
+    const place = await getPlace(slug);
+    if (!place) return apiError(404, "not_found", `No existe un sitio con el slug "${slug}".`);
+    return apiData(place);
+  } catch (error) {
+    console.error("GET /api/v1/places/[slug] failed", error);
+    return apiError(500, "internal_error", "No se pudo cargar el sitio.");
+  }
+}
