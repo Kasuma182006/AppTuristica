@@ -54,6 +54,8 @@ export interface FilterOptions {
   municipalities: FilterOption[];
   /** By the catalog's sort order. */
   placeTypes: FilterOption[];
+  /** By the catalog's sort order. */
+  activities: FilterOption[];
 }
 
 /** Where to draw a site: exact, or the center of a ~2 km area for fragile sites (HU-39). */

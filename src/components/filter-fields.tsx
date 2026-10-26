@@ -11,6 +11,7 @@ export async function FilterFields() {
     <>
       <MunicipalityFilter options={options.municipalities} />
       <ChipGroupFilter legend="Tipo" param="tipo" options={options.placeTypes} />
+      <ChipGroupFilter legend="Actividad" param="actividad" options={options.activities} />
     </>
   );
 }
@@ -23,10 +24,12 @@ export function FilterFieldsSkeleton() {
         <p className="font-medium">Lugar</p>
         <div className="h-11 w-full animate-pulse rounded-md border border-border bg-bg" />
       </div>
-      <div className="space-y-2">
-        <p className="font-medium">Tipo</p>
-        <div className="h-24 w-full animate-pulse rounded-md bg-bg" />
-      </div>
+      {["Tipo", "Actividad"].map((legend) => (
+        <div key={legend} className="space-y-2">
+          <p className="font-medium">{legend}</p>
+          <div className="h-24 w-full animate-pulse rounded-md bg-bg" />
+        </div>
+      ))}
     </div>
   );
 }
