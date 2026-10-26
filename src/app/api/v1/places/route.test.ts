@@ -5,9 +5,10 @@ import type { Page, PlaceQuery, PlaceSummary } from "@/modules/places/types";
 
 const searchPlaces = vi.fn<(query: PlaceQuery) => Promise<ParseResult<Page<PlaceSummary>>>>();
 
-vi.mock("next/server", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("next/server")>()),
-  connection: () => Promise.resolve(),
+// The limit and CORS are tested in src/lib/public-api.test.ts.
+vi.mock("@/lib/public-api", () => ({
+  publicApi: <H>(handler: H) => handler,
+  corsPreflight: () => new Response(null, { status: 204 }),
 }));
 vi.mock("@/modules/places/service", () => ({
   searchPlaces: (query: PlaceQuery) => searchPlaces(query),
@@ -15,7 +16,8 @@ vi.mock("@/modules/places/service", () => ({
 
 const { GET } = await import("./route");
 
-const get = (query: string) => GET(new NextRequest(`http://localhost/api/v1/places${query}`));
+const get = (query: string) =>
+  GET(new NextRequest(`http://localhost/api/v1/places${query}`), undefined);
 
 const place: PlaceSummary = {
   slug: "rio-cali",

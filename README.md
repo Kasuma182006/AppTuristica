@@ -58,7 +58,8 @@ Vercel (plan Hobby) conectado al repositorio de GitHub:
 
 - Push a `main` → producción en https://app-turistica.vercel.app
 - Push a cualquier otra rama → vista previa (protegida con inicio de sesión de Vercel)
-- Variables de entorno en el panel de Vercel (Production y Preview): `DATABASE_URL`.
+- Variables de entorno en el panel de Vercel (Production y Preview): `DATABASE_URL` e `IP_HASH_SECRET`
+  (el mismo valor que en `.env.local`).
   Las migraciones se aplican desde local con `npm run db:migrate`.
 - Vercel no espera a la CI: subir a `main` solo con la CI en verde.
 

@@ -1,9 +1,14 @@
+import { NextRequest } from "next/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Catalogs } from "@/modules/catalogs/types";
 
 const getCatalogs = vi.fn<() => Promise<Catalogs>>();
 
-vi.mock("next/server", () => ({ connection: () => Promise.resolve() }));
+// The limit and CORS are tested in src/lib/public-api.test.ts.
+vi.mock("@/lib/public-api", () => ({
+  publicApi: <H>(handler: H) => handler,
+  corsPreflight: () => new Response(null, { status: 204 }),
+}));
 vi.mock("@/modules/catalogs/service", () => ({ getCatalogs: () => getCatalogs() }));
 
 const { GET } = await import("./route");
@@ -25,7 +30,7 @@ describe("GET /api/v1/catalogs", () => {
   it("returns the catalogs wrapped in data", async () => {
     getCatalogs.mockResolvedValueOnce(catalogs);
 
-    const response = await GET();
+    const response = await GET(new NextRequest("http://localhost/api/v1/catalogs"), undefined);
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ data: catalogs });
@@ -34,7 +39,7 @@ describe("GET /api/v1/catalogs", () => {
   it("lets the CDN cache the response", async () => {
     getCatalogs.mockResolvedValueOnce(catalogs);
 
-    const response = await GET();
+    const response = await GET(new NextRequest("http://localhost/api/v1/catalogs"), undefined);
 
     expect(response.headers.get("Cache-Control")).toContain("s-maxage=3600");
   });
@@ -43,7 +48,7 @@ describe("GET /api/v1/catalogs", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     getCatalogs.mockRejectedValueOnce(new Error("connection refused"));
 
-    const response = await GET();
+    const response = await GET(new NextRequest("http://localhost/api/v1/catalogs"), undefined);
 
     expect(response.status).toBe(500);
     expect(response.headers.get("Cache-Control")).toBeNull();
