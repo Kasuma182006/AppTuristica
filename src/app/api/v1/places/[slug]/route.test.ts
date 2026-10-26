@@ -4,9 +4,10 @@ import type { PlaceDetail } from "@/modules/places/types";
 
 const getPlace = vi.fn<(slug: string) => Promise<PlaceDetail | undefined>>();
 
-vi.mock("next/server", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("next/server")>()),
-  connection: () => Promise.resolve(),
+// The limit and CORS are tested in src/lib/public-api.test.ts.
+vi.mock("@/lib/public-api", () => ({
+  publicApi: <H>(handler: H) => handler,
+  corsPreflight: () => new Response(null, { status: 204 }),
 }));
 vi.mock("@/modules/places/service", () => ({
   getPlace: (slug: string) => getPlace(slug),
