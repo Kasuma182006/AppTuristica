@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import * as schema from "@db/schema";
 import type { Db } from "@/lib/db";
 import {
+  countPlacesByActivity,
   countPlacesByMunicipality,
   countPlacesByPlaceType,
   findPlaceBySlug,
@@ -121,6 +122,17 @@ describe("hidden sites are not counted (HU-40, HU-44)", () => {
 
     expect(queries).toHaveLength(1);
     expect(queries[0]?.sql).toMatch(/^select "place_types"\."slug", count\(\*\) from "places"/);
+    expect(queries.every(requiresPublished)).toBe(true);
+  });
+
+  it("the site count per activity", async () => {
+    const queries = await sentQueries((db) => countPlacesByActivity(db));
+
+    expect(queries).toHaveLength(1);
+    expect(queries[0]?.sql).toMatch(
+      /^select "activities"\."slug", count\(\*\) from "place_activities"/,
+    );
+    expect(queries[0]?.sql).toContain('inner join "places"');
     expect(queries.every(requiresPublished)).toBe(true);
   });
 });

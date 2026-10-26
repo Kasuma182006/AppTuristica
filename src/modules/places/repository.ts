@@ -247,3 +247,15 @@ export async function countPlacesByPlaceType(db: Db): Promise<Map<string, number
     .groupBy(placeTypes.slug);
   return new Map(rows.map((row) => [row.slug, row.total]));
 }
+
+/** Published sites per activity slug (HU-46); activities without sites are absent. */
+export async function countPlacesByActivity(db: Db): Promise<Map<string, number>> {
+  const rows = await db
+    .select({ slug: activities.slug, total: count() })
+    .from(placeActivities)
+    .innerJoin(activities, eq(activities.id, placeActivities.activityId))
+    .innerJoin(places, eq(places.id, placeActivities.placeId))
+    .where(isPublished)
+    .groupBy(activities.slug);
+  return new Map(rows.map((row) => [row.slug, row.total]));
+}

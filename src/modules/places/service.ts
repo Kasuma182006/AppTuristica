@@ -5,6 +5,7 @@ import { getCatalogs } from "@/modules/catalogs/service";
 import type { CatalogItem } from "@/modules/catalogs/types";
 import { findUnknownSlug, type ParseResult } from "./filters";
 import {
+  countPlacesByActivity,
   countPlacesByMunicipality,
   countPlacesByPlaceType,
   findPlaceBySlug,
@@ -141,16 +142,18 @@ function withCounts(items: CatalogItem[], counts: ReadonlyMap<string, number>): 
   return items.map((item) => ({ ...item, placeCount: counts.get(item.slug) ?? 0 }));
 }
 
-/** Every value of the panel's catalog filters, with its published sites (HU-44, HU-45). */
+/** Every value of the panel's catalog filters, with its published sites (HU-44 to HU-46). */
 export async function getFilterOptions(): Promise<FilterOptions> {
   const db = getDb();
-  const [catalogs, byMunicipality, byPlaceType] = await Promise.all([
+  const [catalogs, byMunicipality, byPlaceType, byActivity] = await Promise.all([
     getCatalogs(),
     countPlacesByMunicipality(db),
     countPlacesByPlaceType(db),
+    countPlacesByActivity(db),
   ]);
   return {
     municipalities: withCounts(catalogs.municipalities, byMunicipality),
     placeTypes: withCounts(catalogs.placeTypes, byPlaceType),
+    activities: withCounts(catalogs.activities, byActivity),
   };
 }
