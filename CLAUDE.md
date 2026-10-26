@@ -99,6 +99,9 @@ Pruebas: archivos `*.test.ts` junto al código en `src/`, `db/` o `ingest/`. Nod
 seguridad, 2026-10-23) con npm 11.19, que avisa de install scripts no aprobados (`esbuild`,
 `unrs-resolver`): es inofensivo, todo funciona sin ellos.
 SQL que Drizzle no genera (extensiones, funciones): `npx drizzle-kit generate --custom --name=<nombre>`.
+API: respuestas `{ data }` con claves en inglés (valores en español) y errores con `apiError` de
+`src/lib/api-response.ts`. La base se obtiene con `getDb()` (`src/lib/db.ts`, perezosa: la CI construye
+sin `DATABASE_URL`); las rutas que la consultan llaman antes `await connection()`.
 
 ## Fuera del MVP
 Cuentas, favoritos, reseñas, búsqueda por texto o semántica, filtros por distancia, filtro "Ideal para",
