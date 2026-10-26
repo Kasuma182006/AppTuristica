@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { FilterPanel } from "@/components/filter-panel";
-import { MunicipalityField, MunicipalityFieldSkeleton } from "@/components/municipality-field";
+import { FilterFields, FilterFieldsSkeleton } from "@/components/filter-fields";
 
 /** HU-43 (RF-01): a short introduction and the filter panel, nothing else. */
 export default function HomePage() {
@@ -15,8 +15,8 @@ export default function HomePage() {
         </p>
       </header>
       <FilterPanel>
-        <Suspense fallback={<MunicipalityFieldSkeleton />}>
-          <MunicipalityField />
+        <Suspense fallback={<FilterFieldsSkeleton />}>
+          <FilterFields />
         </Suspense>
       </FilterPanel>
     </div>

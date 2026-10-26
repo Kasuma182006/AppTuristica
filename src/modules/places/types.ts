@@ -43,9 +43,17 @@ export interface PlaceFilters {
   freeAccessOnly: boolean;
 }
 
-/** A municipality for the Lugar filter, with its number of published sites (HU-44). */
-export interface MunicipalityOption extends CatalogItem {
+/** A filter value with its number of published sites (HU-44, HU-45). */
+export interface FilterOption extends CatalogItem {
   placeCount: number;
+}
+
+/** Values of the search panel filters, in display order, with their site counts. */
+export interface FilterOptions {
+  /** Alphabetical. */
+  municipalities: FilterOption[];
+  /** By the catalog's sort order. */
+  placeTypes: FilterOption[];
 }
 
 /** Where to draw a site: exact, or the center of a ~2 km area for fragile sites (HU-39). */

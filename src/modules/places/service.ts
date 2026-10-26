@@ -2,9 +2,11 @@ import { getDb } from "@/lib/db";
 import { APPROX_RADIUS_M, approximateLocation, roundCoordinate } from "@/lib/geo";
 import { SLUG_PATTERN } from "@/lib/slug";
 import { getCatalogs } from "@/modules/catalogs/service";
+import type { CatalogItem } from "@/modules/catalogs/types";
 import { findUnknownSlug, type ParseResult } from "./filters";
 import {
   countPlacesByMunicipality,
+  countPlacesByPlaceType,
   findPlaceBySlug,
   findPlaces,
   type PlaceDetailRow,
@@ -22,7 +24,8 @@ import {
   type Origin,
   type OriginSlug,
   type Page,
-  type MunicipalityOption,
+  type FilterOption,
+  type FilterOptions,
   type PlaceDetail,
   type PlaceLocation,
   type PlaceQuery,
@@ -134,11 +137,20 @@ export async function getPlace(slug: string): Promise<PlaceDetail | undefined> {
   return row && toPlaceDetail(row);
 }
 
-/** Every municipality of the catalog, alphabetical, with its published sites (HU-44). */
-export async function getMunicipalityOptions(): Promise<MunicipalityOption[]> {
-  const [catalogs, counts] = await Promise.all([getCatalogs(), countPlacesByMunicipality(getDb())]);
-  return catalogs.municipalities.map((item) => ({
-    ...item,
-    placeCount: counts.get(item.slug) ?? 0,
-  }));
+function withCounts(items: CatalogItem[], counts: ReadonlyMap<string, number>): FilterOption[] {
+  return items.map((item) => ({ ...item, placeCount: counts.get(item.slug) ?? 0 }));
+}
+
+/** Every value of the panel's catalog filters, with its published sites (HU-44, HU-45). */
+export async function getFilterOptions(): Promise<FilterOptions> {
+  const db = getDb();
+  const [catalogs, byMunicipality, byPlaceType] = await Promise.all([
+    getCatalogs(),
+    countPlacesByMunicipality(db),
+    countPlacesByPlaceType(db),
+  ]);
+  return {
+    municipalities: withCounts(catalogs.municipalities, byMunicipality),
+    placeTypes: withCounts(catalogs.placeTypes, byPlaceType),
+  };
 }

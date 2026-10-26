@@ -236,3 +236,14 @@ export async function countPlacesByMunicipality(db: Db): Promise<Map<string, num
     .groupBy(municipalities.slug);
   return new Map(rows.map((row) => [row.slug, row.total]));
 }
+
+/** Published sites per place type slug (HU-45); types without sites are absent. */
+export async function countPlacesByPlaceType(db: Db): Promise<Map<string, number>> {
+  const rows = await db
+    .select({ slug: placeTypes.slug, total: count() })
+    .from(places)
+    .innerJoin(placeTypes, eq(placeTypes.id, places.placeTypeId))
+    .where(isPublished)
+    .groupBy(placeTypes.slug);
+  return new Map(rows.map((row) => [row.slug, row.total]));
+}
