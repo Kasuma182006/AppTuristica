@@ -36,6 +36,12 @@ export const ORIGIN_SLUGS = {
 
 export type OriginSlug = keyof typeof ORIGIN_SLUGS;
 
+/** How each Origen value is shown in the search panel. */
+export const ORIGIN_LABELS = {
+  abiertas: "Fuentes abiertas",
+  comunidad: "Comunidad",
+} as const satisfies Record<OriginSlug, string>;
+
 /**
  * Site search filters (RF-02, RF-03): AND between filters, OR within a list.
  * An absent filter does not restrict the results.
@@ -51,7 +57,7 @@ export interface PlaceFilters {
   freeAccessOnly: boolean;
 }
 
-/** A filter value with its number of published sites (HU-44 to HU-47). */
+/** A filter value with its number of published sites (HU-44 to HU-48). */
 export interface FilterOption extends CatalogItem {
   placeCount: number;
 }
@@ -66,6 +72,8 @@ export interface FilterOptions {
   activities: FilterOption[];
   /** Easiest first, then sites without a difficulty. */
   difficulties: FilterOption[];
+  /** Open data first, then the community. */
+  origins: FilterOption[];
 }
 
 /** Where to draw a site: exact, or the center of a ~2 km area for fragile sites (HU-39). */

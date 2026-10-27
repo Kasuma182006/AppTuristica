@@ -269,3 +269,13 @@ export async function countPlacesByDifficulty(db: Db): Promise<Map<Difficulty | 
     .groupBy(places.difficulty);
   return new Map(rows.map((row) => [row.difficulty, row.total]));
 }
+
+/** Published sites per origin (HU-48). */
+export async function countPlacesByOrigin(db: Db): Promise<Map<Origin, number>> {
+  const rows = await db
+    .select({ origin: places.origin, total: count() })
+    .from(places)
+    .where(isPublished)
+    .groupBy(places.origin);
+  return new Map(rows.map((row) => [row.origin, row.total]));
+}

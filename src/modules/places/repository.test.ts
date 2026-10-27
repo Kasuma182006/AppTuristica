@@ -6,6 +6,7 @@ import {
   countPlacesByActivity,
   countPlacesByDifficulty,
   countPlacesByMunicipality,
+  countPlacesByOrigin,
   countPlacesByPlaceType,
   findPlaceBySlug,
   findPlaces,
@@ -145,6 +146,14 @@ describe("hidden sites are not counted (HU-40, HU-44)", () => {
 
     expect(queries).toHaveLength(1);
     expect(queries[0]?.sql).toMatch(/^select "difficulty", count\(\*\) from "places" where/);
+    expect(queries.every(requiresPublished)).toBe(true);
+  });
+
+  it("the site count per origin", async () => {
+    const queries = await sentQueries((db) => countPlacesByOrigin(db));
+
+    expect(queries).toHaveLength(1);
+    expect(queries[0]?.sql).toMatch(/^select "origin", count\(\*\) from "places" where/);
     expect(queries.every(requiresPublished)).toBe(true);
   });
 });

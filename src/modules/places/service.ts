@@ -8,6 +8,7 @@ import {
   countPlacesByActivity,
   countPlacesByDifficulty,
   countPlacesByMunicipality,
+  countPlacesByOrigin,
   countPlacesByPlaceType,
   findPlaceBySlug,
   findPlaces,
@@ -18,6 +19,7 @@ import {
   COST_SLUGS,
   DIFFICULTY_LABELS,
   DIFFICULTY_SLUGS,
+  ORIGIN_LABELS,
   ORIGIN_SLUGS,
   SOURCE_NAMES,
   type Cost,
@@ -144,16 +146,18 @@ function withCounts(items: CatalogItem[], counts: ReadonlyMap<string, number>): 
   return items.map((item) => ({ ...item, placeCount: counts.get(item.slug) ?? 0 }));
 }
 
-/** Every value of the panel's filters, with its published sites (HU-44 to HU-47). */
+/** Every value of the panel's filters, with its published sites (HU-44 to HU-48). */
 export async function getFilterOptions(): Promise<FilterOptions> {
   const db = getDb();
-  const [catalogs, byMunicipality, byPlaceType, byActivity, byDifficulty] = await Promise.all([
-    getCatalogs(),
-    countPlacesByMunicipality(db),
-    countPlacesByPlaceType(db),
-    countPlacesByActivity(db),
-    countPlacesByDifficulty(db),
-  ]);
+  const [catalogs, byMunicipality, byPlaceType, byActivity, byDifficulty, byOrigin] =
+    await Promise.all([
+      getCatalogs(),
+      countPlacesByMunicipality(db),
+      countPlacesByPlaceType(db),
+      countPlacesByActivity(db),
+      countPlacesByDifficulty(db),
+      countPlacesByOrigin(db),
+    ]);
   return {
     municipalities: withCounts(catalogs.municipalities, byMunicipality),
     placeTypes: withCounts(catalogs.placeTypes, byPlaceType),
@@ -162,6 +166,11 @@ export async function getFilterOptions(): Promise<FilterOptions> {
       slug,
       name: DIFFICULTY_LABELS[slug as DifficultySlug],
       placeCount: byDifficulty.get(value) ?? 0,
+    })),
+    origins: Object.entries(ORIGIN_SLUGS).map(([slug, value]) => ({
+      slug,
+      name: ORIGIN_LABELS[slug as OriginSlug],
+      placeCount: byOrigin.get(value) ?? 0,
     })),
   };
 }
