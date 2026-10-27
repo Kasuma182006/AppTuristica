@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 import type { PlacePoint } from "@/modules/places/types";
-import { boundsOf, toFeatureCollection, VALLE_BOUNDS } from "./map-data";
+import {
+  boundsOf,
+  FRAGILE_AREA_RADIUS,
+  MAX_SUMMARY_SITES,
+  pixelsPerMeter,
+  sitesAt,
+  toFeatureCollection,
+  VALLE_BOUNDS,
+  type MapPointProperties,
+} from "./map-data";
 
 const point = (slug: string, lat: number, lng: number, approximate = false): PlacePoint => ({
   slug,
@@ -16,8 +25,44 @@ describe("toFeatureCollection", () => {
     expect(collection.features[0]).toEqual({
       type: "Feature",
       geometry: { type: "Point", coordinates: [-76.7, 3.6] },
-      properties: { slug: "a", name: "a", placeType: "cascada", approximate: true },
+      properties: {
+        slug: "a",
+        name: "a",
+        municipality: "Dagua",
+        placeType: "Cascada",
+        approximate: true,
+      },
     });
+  });
+});
+
+describe("FRAGILE_AREA_RADIUS", () => {
+  it("draws the 2 km area at real size: about 26 px at zoom 10 near the equator", () => {
+    expect(2000 * pixelsPerMeter(10, 4)).toBeCloseTo(26.2, 1);
+    expect(Number(FRAGILE_AREA_RADIUS[6])).toBeCloseTo(26.2, 1);
+  });
+
+  it("keeps a visible minimum when zoomed out", () => {
+    expect(FRAGILE_AREA_RADIUS[4]).toBe(7);
+  });
+});
+
+describe("sitesAt", () => {
+  const site = (slug: string): { properties: MapPointProperties } => ({
+    properties: { slug, name: slug, municipality: "Buga", placeType: "Lago", approximate: true },
+  });
+
+  it("lists each site once", () => {
+    expect(sitesAt([site("a"), site("b"), site("a")])).toEqual({
+      shown: [site("a").properties, site("b").properties],
+      more: 0,
+    });
+  });
+
+  it("counts the sites beyond the limit", () => {
+    const many = Array.from({ length: MAX_SUMMARY_SITES + 3 }, (_, i) => site("s" + i));
+    expect(sitesAt(many)).toMatchObject({ more: 3 });
+    expect(sitesAt(many).shown).toHaveLength(MAX_SUMMARY_SITES);
   });
 });
 

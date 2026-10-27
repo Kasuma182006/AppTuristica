@@ -15,7 +15,31 @@ const MapCanvas = dynamic(() => import("./map-canvas"), {
   ),
 });
 
-/** The map view of the results (HU-57). */
+/** The map view of the results (HU-57, HU-58), with its legend. */
 export function PlacesMap({ points }: { points: PlacePoint[] }) {
-  return <MapCanvas points={points} />;
+  return (
+    <div className="space-y-2">
+      <MapCanvas points={points} />
+      <ul className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted">
+        <li className="flex items-center gap-2">
+          {/* Same colors as map-canvas.tsx. */}
+          <span
+            aria-hidden="true"
+            className="size-3 rounded-full border-2 border-white bg-[#1f6f4a] ring-1 ring-[#1f6f4a]"
+          />
+          Ubicación exacta
+        </li>
+        <li className="flex items-center gap-2">
+          <span
+            aria-hidden="true"
+            className="size-4 rounded-full border-2 border-[#c9772b] bg-[#c9772b]/20"
+          />
+          Área aproximada (sitio frágil, 2 km)
+        </li>
+      </ul>
+      <p className="text-sm text-muted">
+        Toca un punto o un área para ver el sitio. La vista de lista tiene la misma información.
+      </p>
+    </div>
+  );
 }
