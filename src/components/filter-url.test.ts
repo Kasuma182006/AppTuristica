@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { exploreHref, splitList } from "./filter-url";
+import { exploreHref, sortHref, splitList } from "./filter-url";
 
 describe("splitList", () => {
   it("splits on commas and drops empty parts", () => {
@@ -37,5 +37,27 @@ describe("exploreHref", () => {
 
   it("encodes anything that is not a slug", () => {
     expect(exploreHref({ lugar: "a b&c" }, none)).toBe("/explorar?lugar=a%20b%26c");
+  });
+});
+
+describe("sortHref", () => {
+  it("adds the order after the filters, with readable commas", () => {
+    expect(sortHref(new URLSearchParams("tipo=cascada,rio"), "recientes")).toBe(
+      "/explorar?tipo=cascada,rio&orden=recientes",
+    );
+  });
+
+  it("replaces the order and returns to page 1", () => {
+    const current = new URLSearchParams("lugar=dagua&orden=recientes&pagina=4&por-pagina=48");
+    expect(sortHref(current, "alfabetico")).toBe(
+      "/explorar?lugar=dagua&orden=alfabetico&por-pagina=48",
+    );
+  });
+
+  it("leaves the default order out of the address", () => {
+    expect(sortHref(new URLSearchParams("orden=alfabetico"), "confianza")).toBe("/explorar");
+    expect(sortHref(new URLSearchParams("actividad=senderismo&orden=recientes"), "confianza")).toBe(
+      "/explorar?actividad=senderismo",
+    );
   });
 });

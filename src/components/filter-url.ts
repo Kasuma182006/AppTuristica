@@ -1,4 +1,5 @@
 import { FILTER_PARAMS } from "@/modules/places/filters";
+import { SORT_SLUGS, type PlaceSort } from "@/modules/places/types";
 
 /** Where the search panel leads (RF-04). */
 export const EXPLORE_PATH = "/explorar";
@@ -33,4 +34,16 @@ export function exploreHref(
     parts.push(`${encodeURIComponent(param)}=${encodeValue(value)}`);
   }
   return parts.length > 0 ? `${EXPLORE_PATH}?${parts.join("&")}` : EXPLORE_PATH;
+}
+
+/**
+ * The /explorar address with another order (HU-53), keeping the filters and starting again at
+ * page 1. The default order is left out of the address.
+ */
+export function sortHref(current: URLSearchParams, sort: PlaceSort): string {
+  const next = new URLSearchParams(current);
+  if (sort === SORT_SLUGS[0]) next.delete("orden");
+  else next.set("orden", sort);
+  const filters = Object.fromEntries(FILTER_PARAMS.map((param) => [param, next.get(param) ?? ""]));
+  return exploreHref(filters, next);
 }

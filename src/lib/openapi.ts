@@ -315,7 +315,8 @@ export const openApiDocument: OpenApiDocument = {
             name: "orden",
             in: "query",
             description:
-              "`confianza` (mayor primero), `recientes` (más nuevos primero) o `alfabetico`.",
+              "`confianza` (mayor primero), `recientes` (los del día más nuevo primero; dentro " +
+              "del día, mayor confianza) o `alfabetico`.",
             schema: { type: "string", enum: SORT_SLUGS, default: SORT_SLUGS[0] },
             example: "recientes",
           },
