@@ -113,6 +113,9 @@ la tabla `rate_limits` (`src/lib/rate-limit.ts`, reutilizable con otra ventana p
 como HMAC con `IP_HASH_SECRET` (`src/lib/ip-hash.ts`), el mismo valor en local y en Vercel.
 Documentación: `src/lib/openapi.ts` (OpenAPI 3.1, servida en `/api/v1/openapi.json` y mostrada en `/api-docs`);
 al cambiar rutas, parámetros o campos, actualízala: `openapi.test.ts` falla si se desalinea del código.
+Mapa: `maplibre-gl` (versión fija) solo se carga en la vista de mapa (`src/components/places-map.tsx`, `next/dynamic`).
+Su worker se publica con `setWorkerUrl(new URL("maplibre-gl/dist/maplibre-gl-worker.mjs", import.meta.url))`
+(`map-canvas.tsx`); sin eso las teselas no cargan. Atribución "© OpenStreetMap contributors" en `map-data.ts`.
 
 ## Fuera del MVP
 Cuentas, favoritos, reseñas, búsqueda por texto o semántica, filtros por distancia, filtro "Ideal para",

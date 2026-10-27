@@ -5,6 +5,7 @@ import type { Db } from "@/lib/db";
 import {
   countPlaces,
   countPlacesByActivity,
+  findPlacePoints,
   countPlacesByDifficulty,
   countPlacesByMunicipality,
   countPlacesByOrigin,
@@ -109,6 +110,15 @@ describe("hidden sites never appear (HU-40)", () => {
   it.each(filterCases)("the result count alone with %s (HU-55)", async (_label, filters) => {
     const queries = await sentQueries((db) =>
       countPlaces(db, { freeAccessOnly: false, ...filters }),
+    );
+
+    expect(queries).toHaveLength(1);
+    expect(queries.every(requiresPublished)).toBe(true);
+  });
+
+  it.each(filterCases)("the map points with %s (HU-57)", async (_label, filters) => {
+    const queries = await sentQueries((db) =>
+      findPlacePoints(db, { freeAccessOnly: false, ...filters }),
     );
 
     expect(queries).toHaveLength(1);

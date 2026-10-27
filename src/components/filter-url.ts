@@ -48,6 +48,25 @@ export function filterKeyOf(params: URLSearchParams): string {
   );
 }
 
+/** Ways to see the results (HU-57); the first is the default and stays out of the address. */
+export const VIEWS = ["lista", "mapa"] as const;
+
+export type View = (typeof VIEWS)[number];
+
+/** The view in an address; anything unknown is the list. */
+export function viewOf(params: URLSearchParams): View {
+  return params.get("vista") === "mapa" ? "mapa" : "lista";
+}
+
+/** The /explorar address in another view, keeping filters and order and starting at page 1. */
+export function viewHref(current: URLSearchParams, view: View): string {
+  const next = new URLSearchParams(current);
+  if (view === VIEWS[0]) next.delete("vista");
+  else next.set("vista", view);
+  const filters = Object.fromEntries(FILTER_PARAMS.map((param) => [param, next.get(param) ?? ""]));
+  return exploreHref(filters, next);
+}
+
 /** The /explorar address of another results page (HU-54); page 1 is left out. */
 export function pageHref(current: URLSearchParams, page: number): string {
   const filters = Object.fromEntries(

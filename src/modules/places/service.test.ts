@@ -1,11 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Catalogs } from "@/modules/catalogs/types";
-import type { PhotoRow, PlaceDetailRow, PlaceSummaryRow } from "./repository";
+import type { PhotoRow, PlaceDetailRow, PlacePointRow, PlaceSummaryRow } from "./repository";
 import type { PlaceFilters, PlaceQuery } from "./types";
 
 const findPlaces = vi.fn<() => Promise<{ rows: PlaceSummaryRow[]; total: number }>>();
 const findPlaceBySlug = vi.fn<(slug: string) => Promise<PlaceDetailRow | undefined>>();
 const countPlaces = vi.fn<(filters: PlaceFilters) => Promise<number>>();
+const findPlacePoints = vi.fn<() => Promise<PlacePointRow[]>>();
 const catalogs: Catalogs = {
   municipalities: [{ slug: "dagua", name: "Dagua" }],
   placeTypes: [{ slug: "cascada", name: "Cascada" }],
@@ -17,11 +18,18 @@ vi.mock("@/modules/catalogs/service", () => ({ getCatalogs: () => Promise.resolv
 vi.mock("./repository", () => ({
   countPlaces: (_db: unknown, filters: PlaceFilters) => countPlaces(filters),
   findPlaces: () => findPlaces(),
+  findPlacePoints: () => findPlacePoints(),
   findPlaceBySlug: (_db: unknown, slug: string) => findPlaceBySlug(slug),
 }));
 
-const { countWithoutEachFilter, getPlace, searchPlaces, toPlaceDetail, toPlaceSummary } =
-  await import("./service");
+const {
+  countWithoutEachFilter,
+  getPlace,
+  searchPlacePoints,
+  searchPlaces,
+  toPlaceDetail,
+  toPlaceSummary,
+} = await import("./service");
 
 const row: PlaceSummaryRow = {
   id: 7,
@@ -307,6 +315,23 @@ describe("fragile sites (HU-39)", () => {
 
   it("approximates the location in search results", () => {
     expect(toPlaceSummary(fragileRow).location).toEqual(approximate);
+  });
+
+  it("approximates the location on the map (HU-57)", async () => {
+    findPlacePoints.mockResolvedValue([
+      {
+        slug: fragileRow.slug,
+        name: fragileRow.name,
+        municipality: "Dagua",
+        placeType: fragileRow.placeType,
+        sensitivity: "fragile",
+        location: fragileRow.location,
+      },
+    ]);
+    const points = await searchPlacePoints({ freeAccessOnly: false });
+
+    expect(points.ok && points.value[0]?.location).toEqual(approximate);
+    expect(JSON.stringify(points)).not.toContain("3.45123");
   });
 
   it("drops the link to the cover's Commons page in search results", () => {

@@ -106,6 +106,15 @@ export interface PlaceSummary {
   photo: PlacePhoto | null;
 }
 
+/** A site on the map (HU-57): never exact for fragile sites. */
+export interface PlacePoint {
+  slug: string;
+  name: string;
+  municipality: string;
+  placeType: CatalogItem;
+  location: PlaceLocation;
+}
+
 /** Values of the `orden` parameter (RF-07); the first one is the default. */
 export const SORT_SLUGS = ["confianza", "recientes", "alfabetico"] as const;
 
