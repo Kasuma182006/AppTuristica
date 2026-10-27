@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Catalogs } from "@/modules/catalogs/types";
-import type { PlaceDetailRow, PlaceRow } from "./repository";
+import type { PhotoRow, PlaceDetailRow, PlaceSummaryRow } from "./repository";
 import type { PlaceQuery } from "./types";
 
-const findPlaces = vi.fn<() => Promise<{ rows: PlaceRow[]; total: number }>>();
+const findPlaces = vi.fn<() => Promise<{ rows: PlaceSummaryRow[]; total: number }>>();
 const findPlaceBySlug = vi.fn<(slug: string) => Promise<PlaceDetailRow | undefined>>();
 const catalogs: Catalogs = {
   municipalities: [{ slug: "dagua", name: "Dagua" }],
@@ -20,7 +20,7 @@ vi.mock("./repository", () => ({
 
 const { getPlace, searchPlaces, toPlaceDetail, toPlaceSummary } = await import("./service");
 
-const row: PlaceRow = {
+const row: PlaceSummaryRow = {
   id: 7,
   slug: "salto-de-bitaco-dagua",
   name: "Salto de Bitaco",
@@ -34,6 +34,17 @@ const row: PlaceRow = {
   confidence: 35,
   sensitivity: "normal",
   location: { lat: 3.6123456789, lng: -76.6987654321 },
+  cover: null,
+};
+
+const photo: PhotoRow = {
+  url: "https://upload.wikimedia.org/wikipedia/commons/a/ab/A.jpg",
+  width: 800,
+  height: 600,
+  author: "Ana",
+  license: "CC BY-SA 4.0",
+  licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+  sourceUrl: "https://commons.wikimedia.org/wiki/File:A.jpg",
 };
 
 describe("toPlaceSummary", () => {
@@ -49,7 +60,12 @@ describe("toPlaceSummary", () => {
       restricted: false,
       confidence: 35,
       location: { lat: 3.612346, lng: -76.698765, approximate: false, radiusM: null },
+      photo: null,
     });
+  });
+
+  it("includes the cover photo (HU-52)", () => {
+    expect(toPlaceSummary({ ...row, cover: photo }).photo).toEqual(photo);
   });
 
   it("leaves out the internal id", () => {
@@ -249,7 +265,7 @@ describe("getPlace", () => {
 });
 
 describe("fragile sites (HU-39)", () => {
-  const fragileRow: PlaceRow = {
+  const fragileRow: PlaceSummaryRow = {
     ...row,
     sensitivity: "fragile",
     inProtectedArea: true,
@@ -259,6 +275,13 @@ describe("fragile sites (HU-39)", () => {
 
   it("approximates the location in search results", () => {
     expect(toPlaceSummary(fragileRow).location).toEqual(approximate);
+  });
+
+  it("drops the link to the cover's Commons page in search results", () => {
+    expect(toPlaceSummary({ ...fragileRow, cover: photo }).photo).toEqual({
+      ...photo,
+      sourceUrl: null,
+    });
   });
 
   it("never includes the exact coordinates anywhere in the response", () => {

@@ -152,6 +152,15 @@ function Endpoint({ path, operation }: { path: string; operation: Operation }) {
   );
 }
 
+/** A field's type in words, e.g. "Photo o null" or "lista de CatalogItem". */
+function typeName(property: Schema): string {
+  if (property.$ref) return property.$ref.split("/").pop() ?? "";
+  if (property.anyOf) return property.anyOf.map(typeName).join(" o ");
+  if (property.type === "array")
+    return `lista de ${property.items ? typeName(property.items) : ""}`;
+  return [property.type].flat().join(" o ");
+}
+
 function SchemaFields({ name, schema }: { name: string; schema: Schema }) {
   const id = `esquema-${name.toLowerCase()}`;
   return (
@@ -164,11 +173,7 @@ function SchemaFields({ name, schema }: { name: string; schema: Schema }) {
       ) : null}
       <ul className="space-y-1 text-sm">
         {Object.entries(schema.properties ?? {}).map(([field, property]) => {
-          const type = property.$ref
-            ? property.$ref.split("/").pop()
-            : property.type === "array"
-              ? `lista de ${property.items?.$ref?.split("/").pop() ?? property.items?.type}`
-              : [property.type].flat().join(" o ");
+          const type = typeName(property);
           return (
             <li key={field}>
               <code className="font-mono">{field}</code>{" "}

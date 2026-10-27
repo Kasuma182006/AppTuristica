@@ -32,6 +32,7 @@ export interface Schema {
   maximum?: number;
   default?: string | number;
   $ref?: string;
+  anyOf?: Schema[];
 }
 
 type SchemaType = "object" | "array" | "string" | "integer" | "number" | "boolean" | "null";
@@ -123,6 +124,15 @@ const placeSummaryExample: PlaceSummary = {
   confidence: 75,
   location: { lat: 3.892485, lng: -76.501984, approximate: false, radiusM: null },
   restricted: false,
+  photo: {
+    url: "https://upload.wikimedia.org/wikipedia/commons/1/14/Lago_Calima.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    width: 1280,
+    height: 960,
+    author: "No machine-readable author provided. Chilangoco assumed (based on copyright claims).",
+    license: "CC BY-SA 3.0",
+    licenseUrl: "https://creativecommons.org/licenses/by-sa/3.0/",
+    sourceUrl: "https://commons.wikimedia.org/wiki/File:Lago_Calima.jpg",
+  },
 };
 
 const pageExample: { data: PlaceSummary[]; meta: Omit<Page<PlaceSummary>, "items"> } = {
@@ -428,12 +438,17 @@ export const openApiDocument: OpenApiDocument = {
       },
       PlaceSummary: {
         type: "object",
-        required: [...Object.keys(placeSummaryProperties), "restricted"],
+        required: [...Object.keys(placeSummaryProperties), "restricted", "photo"],
         properties: {
           ...placeSummaryProperties,
           restricted: {
             type: "boolean",
             description: "En área protegida o en propiedad privada.",
+          },
+          photo: {
+            anyOf: [ref("Photo"), { type: "null" }],
+            description:
+              "Portada (la primera foto de la galería); null si el sitio no tiene fotos.",
           },
         },
       },

@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { FilterFields, FilterFieldsSkeleton } from "@/components/filter-fields";
 import { FilterPanel } from "@/components/filter-panel";
+import { PlaceCard } from "@/components/place-card";
 import { toUrlSearchParams, type PageSearchParams } from "@/lib/search-params";
 import { parsePlaceQuery } from "@/modules/places/filters";
 import { searchPlaces } from "@/modules/places/service";
 
-// Provisional until the result cards (HU-52): only the number of matching sites.
 export const metadata: Metadata = {
   title: "Explorar",
   robots: { index: false, follow: false },
@@ -14,7 +14,8 @@ export const metadata: Metadata = {
 
 const numberFormat = new Intl.NumberFormat("es-CO");
 
-async function ResultCount({ searchParams }: { searchParams: Promise<PageSearchParams> }) {
+/** The matching sites as cards (HU-52); for now only the first page (pages come in HU-54). */
+async function Results({ searchParams }: { searchParams: Promise<PageSearchParams> }) {
   const query = parsePlaceQuery(toUrlSearchParams(await searchParams));
   const result = query.ok ? await searchPlaces(query.value) : query;
   if (!result.ok) {
@@ -25,11 +26,21 @@ async function ResultCount({ searchParams }: { searchParams: Promise<PageSearchP
     );
   }
 
-  const { total } = result.value;
+  const { total, items } = result.value;
   return (
-    <p className="text-lg">
-      {total === 1 ? "1 sitio encontrado" : `${numberFormat.format(total)} sitios encontrados`}
-    </p>
+    <>
+      {/* Announces the new count after each filter change. */}
+      <p aria-live="polite" className="text-lg">
+        {total === 1 ? "1 sitio encontrado" : `${numberFormat.format(total)} sitios encontrados`}
+      </p>
+      <ul className="grid gap-4 sm:grid-cols-2">
+        {items.map((place) => (
+          <li key={place.slug}>
+            <PlaceCard place={place} />
+          </li>
+        ))}
+      </ul>
+    </>
   );
 }
 
@@ -44,14 +55,13 @@ export default function ExplorePage({ searchParams }: PageProps<"/explorar">) {
             <FilterFields searchParams={searchParams} />
           </Suspense>
         </FilterPanel>
-        <section aria-label="Resultados" className="space-y-3">
-          {/* Announces the new count after each filter change. */}
-          <div aria-live="polite">
-            <Suspense fallback={<p className="text-muted">Buscando sitios…</p>}>
-              <ResultCount searchParams={searchParams} />
-            </Suspense>
-          </div>
-          <p className="text-sm text-muted">Los resultados en tarjetas llegan pronto.</p>
+        <section aria-labelledby="resultados" className="space-y-3">
+          <h2 id="resultados" className="sr-only">
+            Resultados
+          </h2>
+          <Suspense fallback={<p className="text-muted">Buscando sitios…</p>}>
+            <Results searchParams={searchParams} />
+          </Suspense>
         </section>
       </div>
     </div>
