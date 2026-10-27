@@ -4,6 +4,7 @@ import * as schema from "@db/schema";
 import type { Db } from "@/lib/db";
 import {
   countPlacesByActivity,
+  countPlacesByDifficulty,
   countPlacesByMunicipality,
   countPlacesByPlaceType,
   findPlaceBySlug,
@@ -52,10 +53,13 @@ function topLevelTerms(where: string): string {
 /**
  * True when every row must have `status = 'published'`: the condition is a top-level AND term
  * (Drizzle renders and(a, b) as "(a and b)"), not inside an OR that would let hidden sites in.
+ * Queries on `places` alone render the column without its table.
  */
 function requiresPublished({ sql, params }: LoggedQuery): boolean {
   const terms = topLevelTerms(whereClause(sql));
-  const match = /"places"\."status" = \$(\d+)/.exec(terms);
+  const onlyPlaces = /^select .* from "places"(?! (?:inner |left )?join)/.test(sql);
+  const column = onlyPlaces ? /(?:"places"\.)?"status" = \$(\d+)/ : /"places"\."status" = \$(\d+)/;
+  const match = column.exec(terms);
   return !terms.includes(" or ") && params[Number(match?.[1]) - 1] === "published";
 }
 
@@ -133,6 +137,14 @@ describe("hidden sites are not counted (HU-40, HU-44)", () => {
       /^select "activities"\."slug", count\(\*\) from "place_activities"/,
     );
     expect(queries[0]?.sql).toContain('inner join "places"');
+    expect(queries.every(requiresPublished)).toBe(true);
+  });
+
+  it("the site count per difficulty", async () => {
+    const queries = await sentQueries((db) => countPlacesByDifficulty(db));
+
+    expect(queries).toHaveLength(1);
+    expect(queries[0]?.sql).toMatch(/^select "difficulty", count\(\*\) from "places" where/);
     expect(queries.every(requiresPublished)).toBe(true);
   });
 });

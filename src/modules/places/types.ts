@@ -20,6 +20,14 @@ export const DIFFICULTY_SLUGS = {
 
 export type DifficultySlug = keyof typeof DIFFICULTY_SLUGS;
 
+/** How each Dificultad value is shown in the search panel. */
+export const DIFFICULTY_LABELS = {
+  facil: "Fácil",
+  moderada: "Moderada",
+  dificil: "Difícil",
+  "sin-dato": "Sin dato",
+} as const satisfies Record<DifficultySlug, string>;
+
 /** Spanish values of the Origen filter (RF-02). */
 export const ORIGIN_SLUGS = {
   abiertas: "open_data",
@@ -43,7 +51,7 @@ export interface PlaceFilters {
   freeAccessOnly: boolean;
 }
 
-/** A filter value with its number of published sites (HU-44, HU-45). */
+/** A filter value with its number of published sites (HU-44 to HU-47). */
 export interface FilterOption extends CatalogItem {
   placeCount: number;
 }
@@ -56,6 +64,8 @@ export interface FilterOptions {
   placeTypes: FilterOption[];
   /** By the catalog's sort order. */
   activities: FilterOption[];
+  /** Easiest first, then sites without a difficulty. */
+  difficulties: FilterOption[];
 }
 
 /** Where to draw a site: exact, or the center of a ~2 km area for fragile sites (HU-39). */
