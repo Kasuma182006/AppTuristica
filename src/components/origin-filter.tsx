@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { FilterOption } from "@/modules/places/types";
 import { canUncheck, checkedParam, toggleValue } from "./chip-filter";
+import { useReportActive } from "./filter-panel-state";
 
 /** URL parameter of the Origen filter. */
 const PARAM = "origen";
@@ -17,6 +18,7 @@ export function OriginFilter({ options }: { options: FilterOption[] }) {
   );
   const [blocked, setBlocked] = useState(false);
   const value = checkedParam(options, checked);
+  useReportActive(PARAM, value !== "");
 
   function onToggle(slug: string) {
     const allowed = canUncheck(checked, slug);
