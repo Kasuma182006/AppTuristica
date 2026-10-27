@@ -259,3 +259,13 @@ export async function countPlacesByActivity(db: Db): Promise<Map<string, number>
     .groupBy(activities.slug);
   return new Map(rows.map((row) => [row.slug, row.total]));
 }
+
+/** Published sites per difficulty (HU-47); `null` counts the sites without one. */
+export async function countPlacesByDifficulty(db: Db): Promise<Map<Difficulty | null, number>> {
+  const rows = await db
+    .select({ difficulty: places.difficulty, total: count() })
+    .from(places)
+    .where(isPublished)
+    .groupBy(places.difficulty);
+  return new Map(rows.map((row) => [row.difficulty, row.total]));
+}

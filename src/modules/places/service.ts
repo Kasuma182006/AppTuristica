@@ -6,6 +6,7 @@ import type { CatalogItem } from "@/modules/catalogs/types";
 import { findUnknownSlug, type ParseResult } from "./filters";
 import {
   countPlacesByActivity,
+  countPlacesByDifficulty,
   countPlacesByMunicipality,
   countPlacesByPlaceType,
   findPlaceBySlug,
@@ -15,6 +16,7 @@ import {
 } from "./repository";
 import {
   COST_SLUGS,
+  DIFFICULTY_LABELS,
   DIFFICULTY_SLUGS,
   ORIGIN_SLUGS,
   SOURCE_NAMES,
@@ -142,18 +144,24 @@ function withCounts(items: CatalogItem[], counts: ReadonlyMap<string, number>): 
   return items.map((item) => ({ ...item, placeCount: counts.get(item.slug) ?? 0 }));
 }
 
-/** Every value of the panel's catalog filters, with its published sites (HU-44 to HU-46). */
+/** Every value of the panel's filters, with its published sites (HU-44 to HU-47). */
 export async function getFilterOptions(): Promise<FilterOptions> {
   const db = getDb();
-  const [catalogs, byMunicipality, byPlaceType, byActivity] = await Promise.all([
+  const [catalogs, byMunicipality, byPlaceType, byActivity, byDifficulty] = await Promise.all([
     getCatalogs(),
     countPlacesByMunicipality(db),
     countPlacesByPlaceType(db),
     countPlacesByActivity(db),
+    countPlacesByDifficulty(db),
   ]);
   return {
     municipalities: withCounts(catalogs.municipalities, byMunicipality),
     placeTypes: withCounts(catalogs.placeTypes, byPlaceType),
     activities: withCounts(catalogs.activities, byActivity),
+    difficulties: Object.entries(DIFFICULTY_SLUGS).map(([slug, value]) => ({
+      slug,
+      name: DIFFICULTY_LABELS[slug as DifficultySlug],
+      placeCount: byDifficulty.get(value) ?? 0,
+    })),
   };
 }
