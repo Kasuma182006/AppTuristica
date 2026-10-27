@@ -2,25 +2,34 @@
 
 import { useId, useState } from "react";
 import { FREE_ACCESS } from "@/modules/places/filters";
-import { useReportActive } from "./filter-panel-state";
+import { useFilterValue, useInitialValue } from "./filter-panel-state";
 import { placeCountLabel } from "./municipality-search";
 
 /**
  * Hide restricted access (HU-49): unchecked by default; checked, it sends ?acceso=libre, which
  * leaves out protected areas and private property. A plain checkbox, so it works without
- * JavaScript; the state is only tracked for "Limpiar filtros" (HU-50).
+ * JavaScript; the state is tracked for "Limpiar filtros" (HU-50) and the address (HU-51).
  */
-export function AccessFilter({ restrictedCount }: { restrictedCount: number }) {
+/** URL parameter of the access filter. */
+const PARAM = "acceso";
+
+interface Props {
+  restrictedCount: number;
+  /** The parameter's value in the address. */
+  initial?: string;
+}
+
+export function AccessFilter({ restrictedCount, initial }: Props) {
   const id = useId();
-  const [checked, setChecked] = useState(false);
-  useReportActive("acceso", checked);
+  const [checked, setChecked] = useState(useInitialValue(initial) === FREE_ACCESS);
+  useFilterValue(PARAM, checked ? FREE_ACCESS : "");
   return (
     <fieldset className="space-y-1">
       <legend className="font-medium">Acceso</legend>
       <label className="flex min-h-11 cursor-pointer items-center gap-3">
         <input
           type="checkbox"
-          name="acceso"
+          name={PARAM}
           value={FREE_ACCESS}
           checked={checked}
           onChange={(event) => setChecked(event.target.checked)}

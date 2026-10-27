@@ -8,7 +8,7 @@ import {
   normalizeForSearch,
   placeCountLabel,
 } from "./municipality-search";
-import { useReportActive } from "./filter-panel-state";
+import { useFilterValue, useInitialValue } from "./filter-panel-state";
 
 /** URL parameter of the Lugar filter. */
 const PARAM = "lugar";
@@ -18,22 +18,26 @@ const fieldClass =
 
 interface Props {
   options: FilterOption[];
+  /** The municipality's slug in the address. */
+  initial?: string;
 }
 
 /**
  * Lugar filter (HU-44): one municipality with autocomplete, as an ARIA combobox (WAI-ARIA APG
  * "list autocomplete"). Needs JavaScript, like the rest of the search (decided in HU-44).
  */
-export function MunicipalityFilter({ options }: Props) {
+export function MunicipalityFilter({ options, initial: fromAddress }: Props) {
   const id = useId();
   const listId = `${id}-list`;
   const hintId = `${id}-hint`;
-  const [query, setQuery] = useState("");
-  const [selected, setSelected] = useState<FilterOption>();
+  const initial = useInitialValue(fromAddress);
+  // Starts with the municipality in the address (HU-51), if it exists.
+  const [selected, setSelected] = useState(() => options.find((o) => o.slug === initial));
+  const [query, setQuery] = useState(selected?.name ?? "");
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
-  useReportActive(PARAM, selected !== undefined);
+  useFilterValue(PARAM, selected?.slug ?? "");
 
   // With a choice made, reopening shows every municipality, not just the chosen one.
   const suggestions = selected ? options : matchByWordStart(options, query);

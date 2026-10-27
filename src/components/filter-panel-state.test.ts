@@ -1,27 +1,27 @@
 import { describe, expect, it } from "vitest";
-import { anyActive, withActive } from "./filter-panel-state";
+import { activeCount, withValue } from "./filter-panel-state";
 
-describe("withActive", () => {
-  it("records a filter's state", () => {
-    expect(withActive({}, "tipo", true)).toEqual({ tipo: true });
-    expect(withActive({ tipo: true }, "tipo", false)).toEqual({ tipo: false });
+describe("withValue", () => {
+  it("records a filter's value", () => {
+    expect(withValue({}, "tipo", "cascada")).toEqual({ tipo: "cascada" });
+    expect(withValue({ tipo: "cascada" }, "tipo", "")).toEqual({ tipo: "" });
   });
 
   it("returns the same object when nothing changes, so React does not re-render", () => {
-    const state = { tipo: true };
-    expect(withActive(state, "tipo", true)).toBe(state);
+    const state = { tipo: "cascada,rio" };
+    expect(withValue(state, "tipo", "cascada,rio")).toBe(state);
     const empty = {};
-    expect(withActive(empty, "lugar", false)).toBe(empty);
+    expect(withValue(empty, "lugar", "")).toBe(empty);
   });
 });
 
-describe("anyActive", () => {
-  it("is true when at least one filter is active", () => {
-    expect(anyActive({ lugar: false, tipo: true })).toBe(true);
+describe("activeCount", () => {
+  it("counts the filters with a value", () => {
+    expect(activeCount({ lugar: "dagua", tipo: "", origen: "comunidad" })).toBe(2);
   });
 
-  it("is false when none is", () => {
-    expect(anyActive({})).toBe(false);
-    expect(anyActive({ lugar: false, origen: false })).toBe(false);
+  it("is zero when none narrows the search", () => {
+    expect(activeCount({})).toBe(0);
+    expect(activeCount({ lugar: "", origen: "" })).toBe(0);
   });
 });
