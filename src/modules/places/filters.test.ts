@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { Catalogs } from "@/modules/catalogs/types";
-import { findUnknownSlug, parsePlaceFilters, parsePlaceQuery } from "./filters";
+import {
+  activeFilters,
+  findUnknownSlug,
+  parsePlaceFilters,
+  parsePlaceQuery,
+  withoutFilter,
+} from "./filters";
 
 const parse = (query: string) => parsePlaceFilters(new URLSearchParams(query));
 
@@ -130,6 +136,32 @@ describe("parsePlaceQuery", () => {
     ["pagina=1&pagina=2", "pagina: aparece más de una vez."],
   ])("rejects %s", (search, message) => {
     expect(query(search)).toEqual({ ok: false, message });
+  });
+});
+
+describe("activeFilters", () => {
+  it("lists the filters that narrow the search, in URL order", () => {
+    const filters = parse("acceso=libre&tipo=cascada&lugar=dagua");
+    expect(filters.ok && activeFilters(filters.value)).toEqual(["lugar", "tipo", "acceso"]);
+  });
+
+  it("is empty without filters", () => {
+    const filters = parse("");
+    expect(filters.ok && activeFilters(filters.value)).toEqual([]);
+  });
+});
+
+describe("withoutFilter", () => {
+  it("removes one filter and keeps the others", () => {
+    const filters = parse("tipo=cascada,rio&actividad=senderismo&acceso=libre");
+    if (!filters.ok) throw new Error(filters.message);
+
+    expect(withoutFilter(filters.value, "tipo")).toMatchObject({
+      placeTypes: undefined,
+      activities: ["senderismo"],
+      freeAccessOnly: true,
+    });
+    expect(withoutFilter(filters.value, "acceso").freeAccessOnly).toBe(false);
   });
 });
 

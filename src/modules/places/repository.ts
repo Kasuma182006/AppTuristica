@@ -195,6 +195,17 @@ async function withCovers<T extends { id: number }>(
   return rows.map((row) => ({ ...row, cover: covers.get(row.id) ?? null }));
 }
 
+/** How many published sites match the filters (HU-36; HU-55 counts without each filter). */
+export async function countPlaces(db: Db, filters: PlaceFilters): Promise<number> {
+  const [counted] = await db
+    .select({ total: count() })
+    .from(places)
+    .innerJoin(municipalities, eq(municipalities.id, places.municipalityId))
+    .innerJoin(placeTypes, eq(placeTypes.id, places.placeTypeId))
+    .where(and(...filterConditions(db, filters)));
+  return counted?.total ?? 0;
+}
+
 /**
  * One page of published sites matching the filters, with their activities, covers and the
  * total.
@@ -204,13 +215,6 @@ export async function findPlaces(
   { filters, sort, page, pageSize }: PlaceQuery,
 ): Promise<{ rows: PlaceSummaryRow[]; total: number }> {
   const where = and(...filterConditions(db, filters));
-
-  const countQuery = db
-    .select({ total: count() })
-    .from(places)
-    .innerJoin(municipalities, eq(municipalities.id, places.municipalityId))
-    .innerJoin(placeTypes, eq(placeTypes.id, places.placeTypeId))
-    .where(where);
 
   const pageQuery = db
     .select(SUMMARY_COLUMNS)
@@ -222,11 +226,11 @@ export async function findPlaces(
     .limit(pageSize)
     .offset((page - 1) * pageSize);
 
-  const [[counted], rows] = await Promise.all([countQuery, pageQuery]);
+  const [total, rows] = await Promise.all([countPlaces(db, filters), pageQuery]);
   const [withActs, withCover] = await Promise.all([withActivities(db, rows), withCovers(db, rows)]);
   return {
     rows: withActs.map((row, index) => ({ ...row, cover: withCover[index]?.cover ?? null })),
-    total: counted?.total ?? 0,
+    total,
   };
 }
 

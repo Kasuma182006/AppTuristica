@@ -1,8 +1,10 @@
 import { connection } from "next/server";
-import type { PageSearchParams } from "@/lib/search-params";
+import { toUrlSearchParams, type PageSearchParams } from "@/lib/search-params";
 import { getFilterOptions } from "@/modules/places/service";
 import { AccessFilter } from "./access-filter";
 import { ChipGroupFilter } from "./chip-group-filter";
+import { AddressSync } from "./filter-panel-state";
+import { filterKeyOf } from "./filter-url";
 import { MunicipalityFilter } from "./municipality-filter";
 import { OriginFilter } from "./origin-filter";
 
@@ -38,6 +40,7 @@ export async function FilterFields({ searchParams }: { searchParams?: Promise<Pa
       />
       <OriginFilter options={options.origins} initial={initial("origen")} />
       <AccessFilter restrictedCount={options.restrictedCount} initial={initial("acceso")} />
+      {params ? <AddressSync filters={filterKeyOf(toUrlSearchParams(params))} /> : null}
     </>
   );
 }

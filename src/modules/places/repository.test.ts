@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import * as schema from "@db/schema";
 import type { Db } from "@/lib/db";
 import {
+  countPlaces,
   countPlacesByActivity,
   countPlacesByDifficulty,
   countPlacesByMunicipality,
@@ -102,6 +103,15 @@ describe("hidden sites never appear (HU-40)", () => {
     expect(queries).toHaveLength(2);
     expect(count?.sql).toMatch(/^select count\(\*\) from "places"/);
     expect(page?.sql).toMatch(/ from "places" /);
+    expect(queries.every(requiresPublished)).toBe(true);
+  });
+
+  it.each(filterCases)("the result count alone with %s (HU-55)", async (_label, filters) => {
+    const queries = await sentQueries((db) =>
+      countPlaces(db, { freeAccessOnly: false, ...filters }),
+    );
+
+    expect(queries).toHaveLength(1);
     expect(queries.every(requiresPublished)).toBe(true);
   });
 

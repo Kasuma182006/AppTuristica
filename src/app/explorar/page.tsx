@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { FilterFields, FilterFieldsSkeleton } from "@/components/filter-fields";
+import { EmptyResults } from "@/components/empty-results";
 import { FilterPanel } from "@/components/filter-panel";
 import { pageHref } from "@/components/filter-url";
 import { PaginationBar } from "@/components/pagination-bar";
@@ -39,8 +40,9 @@ async function Results({ searchParams }: { searchParams: Promise<PageSearchParam
         <p aria-live="polite" className="text-lg">
           {total === 1 ? "1 sitio encontrado" : `${numberFormat.format(total)} sitios encontrados`}
         </p>
-        <SortSelect sort={query.value.sort} />
+        {total > 0 ? <SortSelect sort={query.value.sort} /> : null}
       </div>
+      {total === 0 ? <EmptyResults filters={query.value.filters} params={params} /> : null}
       <ul className="grid gap-4 sm:grid-cols-2">
         {items.map((place) => (
           <li key={place.slug}>
