@@ -19,11 +19,13 @@ import {
   countRestrictedPlaces,
   findPlaceBySlug,
   countPlaces,
+  findPlacePoints,
   findPlaces,
   type PhotoRow,
   type PlaceDetailRow,
   type PlaceRow,
   type PlaceSummaryRow,
+  type PlacePointRow,
 } from "./repository";
 import {
   COST_SLUGS,
@@ -45,6 +47,7 @@ import {
   type PlaceFilters,
   type PlaceLocation,
   type PlacePhoto,
+  type PlacePoint,
   type PlaceQuery,
   type PlaceSummary,
 } from "./types";
@@ -127,6 +130,26 @@ export async function searchPlaces(query: PlaceQuery): Promise<ParseResult<Page<
       totalPages: Math.ceil(total / query.pageSize),
     },
   };
+}
+
+function toPlacePoint(row: PlacePointRow): PlacePoint {
+  return {
+    slug: row.slug,
+    name: row.name,
+    municipality: row.municipality,
+    placeType: row.placeType,
+    location: toPublicLocation(row),
+  };
+}
+
+/**
+ * Every published site matching the filters, placed on the map (HU-57). Fails, like
+ * searchPlaces, when a filter names a municipality, type or activity that does not exist.
+ */
+export async function searchPlacePoints(filters: PlaceFilters): Promise<ParseResult<PlacePoint[]>> {
+  const unknown = findUnknownSlug(filters, await getCatalogs());
+  if (unknown) return { ok: false, message: unknown };
+  return { ok: true, value: (await findPlacePoints(getDb(), filters)).map(toPlacePoint) };
 }
 
 /**

@@ -195,6 +195,39 @@ async function withCovers<T extends { id: number }>(
   return rows.map((row) => ({ ...row, cover: covers.get(row.id) ?? null }));
 }
 
+/** A site on the map (HU-57): enough to place it and name it. */
+export interface PlacePointRow {
+  slug: string;
+  name: string;
+  municipality: string;
+  placeType: CatalogItem;
+  sensitivity: Sensitivity;
+  /** Exact: approximate it before exposing a fragile site. */
+  location: LngLat;
+}
+
+/** Most sites a map shows; the whole Valle has about 530. */
+export const MAX_MAP_POINTS = 5000;
+
+/** Every published site matching the filters, for the map (no pages, alphabetical). */
+export async function findPlacePoints(db: Db, filters: PlaceFilters): Promise<PlacePointRow[]> {
+  return db
+    .select({
+      slug: places.slug,
+      name: places.name,
+      municipality: municipalities.name,
+      placeType: { slug: placeTypes.slug, name: placeTypes.name },
+      sensitivity: places.sensitivity,
+      location: places.location,
+    })
+    .from(places)
+    .innerJoin(municipalities, eq(municipalities.id, places.municipalityId))
+    .innerJoin(placeTypes, eq(placeTypes.id, places.placeTypeId))
+    .where(and(...filterConditions(db, filters)))
+    .orderBy(asc(places.name), asc(places.id))
+    .limit(MAX_MAP_POINTS);
+}
+
 /** How many published sites match the filters (HU-36; HU-55 counts without each filter). */
 export async function countPlaces(db: Db, filters: PlaceFilters): Promise<number> {
   const [counted] = await db

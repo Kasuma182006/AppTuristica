@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { exploreHref, filterKey, filterKeyOf, pageHref, sortHref, splitList } from "./filter-url";
+import {
+  exploreHref,
+  filterKey,
+  filterKeyOf,
+  pageHref,
+  sortHref,
+  splitList,
+  viewHref,
+  viewOf,
+} from "./filter-url";
 
 describe("splitList", () => {
   it("splits on commas and drops empty parts", () => {
@@ -51,6 +60,30 @@ describe("filterKeyOf", () => {
       filterKey({ tipo: "cascada,rio", lugar: "", origen: "" }),
     );
     expect(filterKeyOf(new URLSearchParams("orden=alfabetico"))).toBe(filterKey({}));
+  });
+});
+
+describe("viewOf and viewHref", () => {
+  it("reads the map view and treats anything else as the list", () => {
+    expect(viewOf(new URLSearchParams("vista=mapa"))).toBe("mapa");
+    expect(viewOf(new URLSearchParams("vista=tabla"))).toBe("lista");
+    expect(viewOf(new URLSearchParams())).toBe("lista");
+  });
+
+  it("switches view keeping filters and order, back to page 1", () => {
+    const current = new URLSearchParams("tipo=cascada,rio&orden=alfabetico&pagina=3");
+    expect(viewHref(current, "mapa")).toBe(
+      "/explorar?tipo=cascada,rio&orden=alfabetico&vista=mapa",
+    );
+    expect(viewHref(new URLSearchParams("vista=mapa&lugar=dagua"), "lista")).toBe(
+      "/explorar?lugar=dagua",
+    );
+  });
+
+  it("is kept when a filter changes", () => {
+    expect(exploreHref({ tipo: "rio" }, new URLSearchParams("vista=mapa&pagina=2"))).toBe(
+      "/explorar?tipo=rio&vista=mapa",
+    );
   });
 });
 
