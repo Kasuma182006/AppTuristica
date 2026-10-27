@@ -1,3 +1,5 @@
+import type { ExpressionSpecification } from "maplibre-gl";
+import { APPROX_RADIUS_M } from "@/lib/geo";
 import type { PlacePoint } from "@/modules/places/types";
 
 /** OpenFreeMap's vector style: free, no key (CLAUDE.md). */
@@ -33,12 +35,21 @@ export const MAP_LOCALE: Record<string, string> = {
   "CooperativeGesturesHandler.MobileHelpText": "Usa dos dedos para mover el mapa",
 };
 
+/** What the map keeps of each site, enough for its summary (HU-58). */
+export interface MapPointProperties {
+  slug: string;
+  name: string;
+  municipality: string;
+  placeType: string;
+  approximate: boolean;
+}
+
 export interface PointFeatureCollection {
   type: "FeatureCollection";
   features: {
     type: "Feature";
     geometry: { type: "Point"; coordinates: [number, number] };
-    properties: { slug: string; name: string; placeType: string; approximate: boolean };
+    properties: MapPointProperties;
   }[];
 }
 
@@ -52,10 +63,58 @@ export function toFeatureCollection(points: readonly PlacePoint[]): PointFeature
       properties: {
         slug: point.slug,
         name: point.name,
-        placeType: point.placeType.slug,
+        municipality: point.municipality,
+        placeType: point.placeType.name,
         approximate: point.location.approximate,
       },
     })),
+  };
+}
+
+/** Pixels per meter at a zoom level (Web Mercator, 512 px tiles), near the latitude given. */
+export function pixelsPerMeter(zoom: number, latitude: number): number {
+  const metersPerPixelAtZoom0 = 78271.517 * Math.cos((latitude * Math.PI) / 180);
+  return 2 ** zoom / metersPerPixelAtZoom0;
+}
+
+/** Latitude for the radius scale; Colombia spans 0-12° N, where it changes less than 3 %. */
+const SCALE_LATITUDE = 4;
+/** From this zoom on, a fragile area is drawn at its real size. */
+const REAL_SIZE_ZOOM = 10;
+/** Its radius in pixels when zoomed out, so it stays visible. */
+const MIN_AREA_PIXELS = 7;
+
+/**
+ * Circle radius of a fragile site's area (HU-58): its real size (APPROX_RADIUS_M) from zoom 10
+ * on, growing smoothly from a visible minimum when zoomed out.
+ */
+export const FRAGILE_AREA_RADIUS: ExpressionSpecification = [
+  "interpolate",
+  ["exponential", 2],
+  ["zoom"],
+  0,
+  MIN_AREA_PIXELS,
+  REAL_SIZE_ZOOM,
+  APPROX_RADIUS_M * pixelsPerMeter(REAL_SIZE_ZOOM, SCALE_LATITUDE),
+  22,
+  APPROX_RADIUS_M * pixelsPerMeter(22, SCALE_LATITUDE),
+];
+
+/** Most sites listed in one summary; the rest are counted. */
+export const MAX_SUMMARY_SITES = 6;
+
+/**
+ * The sites under a click or tap (HU-58), once each: fragile sites of one grid cell share their
+ * point, and an area can sit on top of others.
+ */
+export function sitesAt(features: readonly { properties: MapPointProperties }[]): {
+  shown: MapPointProperties[];
+  more: number;
+} {
+  const unique = [...new Map(features.map((f) => [f.properties.slug, f.properties])).values()];
+  return {
+    shown: unique.slice(0, MAX_SUMMARY_SITES),
+    more: Math.max(0, unique.length - MAX_SUMMARY_SITES),
   };
 }
 

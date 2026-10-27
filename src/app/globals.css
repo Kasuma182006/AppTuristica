@@ -65,3 +65,20 @@
     @apply outline-2 outline-offset-2 outline-primary;
   }
 }
+
+/* Map summaries (HU-58): a close button big enough to tap (MapLibre's is 14 px). */
+.maplibregl-popup .maplibregl-popup-close-button {
+  width: 2.75rem;
+  height: 2.75rem;
+  font-size: 1.5rem;
+  line-height: 1;
+  /* The light theme muted text: AA on the white summary. */
+  color: #5b6661;
+}
+
+.maplibregl-popup .maplibregl-popup-content {
+  padding: 0.75rem 2.75rem 0.75rem 0.75rem;
+  /* Several sites in one area stay inside the map (half its height) and scroll. */
+  max-height: min(16rem, 30vh);
+  overflow-y: auto;
+}
