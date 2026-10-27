@@ -39,15 +39,23 @@ export function useInitialValue(fromAddress: string | undefined): string {
   return cleared ? "" : (fromAddress ?? "");
 }
 
-/** Lets the panel know a filter's URL value, e.g. "cascada,rio" for Tipo or "" for none. */
+/**
+ * Lets the panel know a filter's URL value, e.g. "cascada,rio" for Tipo or "" for none. Only a
+ * new value is a change: a new `report` function must not look like an unmount and a remount,
+ * which the panel would take for the visitor's change (HU-56: it sent page 2 back to page 1).
+ */
 export function useFilterValue(filter: string, value: string): void {
   const { report } = useContext(FilterPanelContext);
+  const reportRef = useRef(report);
   const mounted = useRef(false);
   useEffect(() => {
-    report(filter, value, mounted.current);
+    reportRef.current = report;
+  }, [report]);
+  useEffect(() => {
+    reportRef.current(filter, value, mounted.current);
     mounted.current = true;
-  }, [report, filter, value]);
-  useEffect(() => () => report(filter, "", false), [report, filter]);
+  }, [filter, value]);
+  useEffect(() => () => reportRef.current(filter, "", false), [filter]);
 }
 
 /** Records a filter's value, returning the same object when nothing changes. */

@@ -1,9 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useCallback, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { activeCount, FilterPanelContext, withValue } from "./filter-panel-state";
 import { exploreHref, filterKey, filterKeyOf } from "./filter-url";
+import { useResultsNavigate } from "./results-transition";
 
 type Values = Readonly<Record<string, string>>;
 
@@ -28,7 +28,7 @@ const isShown = (element: HTMLElement | null) => (element?.getClientRects().leng
  * always holds the chosen filters with readable commas (HU-51).
  */
 export function FilterPanel({ children, live = false }: Props) {
-  const router = useRouter();
+  const navigate = useResultsNavigate();
   const panelId = useId();
   const [values, setValues] = useState<Values>({});
   // Read by the callbacks, which must not change on every report.
@@ -48,10 +48,10 @@ export function FilterPanel({ children, live = false }: Props) {
       const href = exploreHref(next, new URLSearchParams(window.location.search));
       // Replacing keeps Back for leaving the search, not for undoing each chip.
       if (href !== window.location.pathname + window.location.search) {
-        router.replace(href, { scroll: false });
+        navigate(href, { replace: true, scroll: false });
       }
     },
-    [router],
+    [navigate],
   );
 
   const report = useCallback(
@@ -116,7 +116,7 @@ export function FilterPanel({ children, live = false }: Props) {
         aria-label="Buscar lugares"
         onSubmit={(event) => {
           event.preventDefault();
-          router.push(exploreHref(valuesRef.current, new URLSearchParams()));
+          navigate(exploreHref(valuesRef.current, new URLSearchParams()));
         }}
         className="space-y-4 rounded-xl border border-border bg-surface p-4 sm:p-6"
       >

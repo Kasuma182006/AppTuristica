@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { PAGE_DATA_DEADLINE_MS, withDeadline } from "@/lib/deadline";
 import { getCatalogs } from "@/modules/catalogs/service";
 import type { Catalogs } from "@/modules/catalogs/types";
 import {
@@ -17,6 +17,7 @@ import {
 } from "@/modules/places/types";
 import { exploreHref, splitList } from "./filter-url";
 import { placeCountLabel } from "./municipality-search";
+import { ResultsLink } from "./results-transition";
 
 const FILTER_LABELS: Record<FilterParam, string> = {
   lugar: "Lugar",
@@ -62,7 +63,7 @@ export async function EmptyResults({ filters, params }: Props) {
   }
 
   const [suggestions, catalogs] = await Promise.all([
-    countWithoutEachFilter(filters),
+    withDeadline(countWithoutEachFilter(filters), PAGE_DATA_DEADLINE_MS, "las sugerencias"),
     getCatalogs(),
   ]);
   const current = (param: FilterParam) => params.get(param)?.trim() ?? "";
@@ -85,11 +86,10 @@ export async function EmptyResults({ filters, params }: Props) {
         <ul className="space-y-2">
           {suggestions.map(({ param, total }) => (
             <li key={param} className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <Link
+              <ResultsLink
                 href={exploreHref(valuesWithout(param), params)}
                 replace
                 scroll={false}
-                prefetch={false}
                 className={linkClass}
               >
                 <span aria-hidden="true">×</span>
@@ -97,21 +97,20 @@ export async function EmptyResults({ filters, params }: Props) {
                   <span className="sr-only">Quitar </span>
                   {filterText(param, current(param), catalogs)}
                 </span>
-              </Link>
+              </ResultsLink>
               <span className="text-sm text-muted">{placeCountLabel(total)}</span>
             </li>
           ))}
         </ul>
       ) : null}
-      <Link
+      <ResultsLink
         href={exploreHref({}, params)}
         replace
         scroll={false}
-        prefetch={false}
         className="inline-flex h-11 items-center justify-center rounded-md bg-primary px-6 font-medium text-on-primary"
       >
         Limpiar filtros
-      </Link>
+      </ResultsLink>
     </div>
   );
 }

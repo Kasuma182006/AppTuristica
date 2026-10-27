@@ -1,9 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useId } from "react";
 import { SORT_SLUGS, type PlaceSort } from "@/modules/places/types";
 import { sortHref } from "./filter-url";
+import { useResultsNavigate } from "./results-transition";
 
 /** Names of the orders (RF-07); "Más completos" matches the cards' "Datos …" levels. */
 const SORT_LABELS: Record<PlaceSort, string> = {
@@ -17,7 +17,7 @@ const isSort = (value: string): value is PlaceSort =>
 
 /** Order of the results (HU-53): each change updates the address and the results at once. */
 export function SortSelect({ sort }: { sort: PlaceSort }) {
-  const router = useRouter();
+  const navigate = useResultsNavigate();
   const id = useId();
 
   return (
@@ -33,7 +33,8 @@ export function SortSelect({ sort }: { sort: PlaceSort }) {
           const next = event.target.value;
           if (!isSort(next)) return;
           // Replacing keeps Back for leaving the search, like the filters (HU-51).
-          router.replace(sortHref(new URLSearchParams(window.location.search), next), {
+          navigate(sortHref(new URLSearchParams(window.location.search), next), {
+            replace: true,
             scroll: false,
           });
         }}

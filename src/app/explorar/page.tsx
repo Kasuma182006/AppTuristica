@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Suspense } from "react";
 import { FilterFields, FilterFieldsSkeleton } from "@/components/filter-fields";
 import { EmptyResults } from "@/components/empty-results";
 import { FilterPanel } from "@/components/filter-panel";
+import { LoadError } from "@/components/load-error";
 import { pageHref } from "@/components/filter-url";
 import { PaginationBar } from "@/components/pagination-bar";
 import { PlaceCard } from "@/components/place-card";
+import { ResultsSkeleton } from "@/components/results-skeleton";
+import { ResultsLink, ResultsRegion, ResultsTransition } from "@/components/results-transition";
 import { SortSelect } from "@/components/sort-select";
+import { PAGE_DATA_DEADLINE_MS, withDeadline } from "@/lib/deadline";
 import { toUrlSearchParams, type PageSearchParams } from "@/lib/search-params";
 import { parsePlaceQuery } from "@/modules/places/filters";
 import { searchPlaces } from "@/modules/places/service";
@@ -23,7 +26,9 @@ const numberFormat = new Intl.NumberFormat("es-CO");
 async function Results({ searchParams }: { searchParams: Promise<PageSearchParams> }) {
   const params = toUrlSearchParams(await searchParams);
   const query = parsePlaceQuery(params);
-  const result = query.ok ? await searchPlaces(query.value) : query;
+  const result = query.ok
+    ? await withDeadline(searchPlaces(query.value), PAGE_DATA_DEADLINE_MS, "los resultados")
+    : query;
   if (!query.ok || !result.ok) {
     return (
       <p role="alert" className="text-muted">
@@ -53,9 +58,9 @@ async function Results({ searchParams }: { searchParams: Promise<PageSearchParam
       {items.length === 0 && total > 0 ? (
         <p className="text-muted">
           La página {page} no existe.{" "}
-          <Link href={pageHref(params, totalPages)} className="text-primary underline">
+          <ResultsLink href={pageHref(params, totalPages)} className="text-primary underline">
             Ir a la última página
-          </Link>
+          </ResultsLink>
         </p>
       ) : null}
       <PaginationBar page={page} totalPages={totalPages} params={params} />
@@ -63,26 +68,38 @@ async function Results({ searchParams }: { searchParams: Promise<PageSearchParam
   );
 }
 
-/** HU-51: the panel restores the filters in the address and keeps it updated on each change. */
+/**
+ * HU-51: the panel restores the filters in the address and keeps it updated on each change.
+ * HU-56: a skeleton on the first load, dimmed results while they update, and a retry when the
+ * results or the filters fail to load, each on its own.
+ */
 export default function ExplorePage({ searchParams }: PageProps<"/explorar">) {
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Explorar</h1>
-      <div className="space-y-4 lg:grid lg:grid-cols-[18rem_minmax(0,1fr)] lg:items-start lg:gap-8 lg:space-y-0">
-        <FilterPanel live>
-          <Suspense fallback={<FilterFieldsSkeleton />}>
-            <FilterFields searchParams={searchParams} />
-          </Suspense>
-        </FilterPanel>
-        <section aria-labelledby="resultados" className="space-y-3">
-          <h2 id="resultados" className="sr-only">
-            Resultados
-          </h2>
-          <Suspense fallback={<p className="text-muted">Buscando sitios…</p>}>
-            <Results searchParams={searchParams} />
-          </Suspense>
-        </section>
-      </div>
+      <ResultsTransition>
+        <div className="space-y-4 lg:grid lg:grid-cols-[18rem_minmax(0,1fr)] lg:items-start lg:gap-8 lg:space-y-0">
+          <FilterPanel live>
+            <LoadError what="los filtros">
+              <Suspense fallback={<FilterFieldsSkeleton />}>
+                <FilterFields searchParams={searchParams} />
+              </Suspense>
+            </LoadError>
+          </FilterPanel>
+          <section aria-labelledby="resultados">
+            <h2 id="resultados" className="sr-only">
+              Resultados
+            </h2>
+            <ResultsRegion>
+              <LoadError what="los resultados">
+                <Suspense fallback={<ResultsSkeleton />}>
+                  <Results searchParams={searchParams} />
+                </Suspense>
+              </LoadError>
+            </ResultsRegion>
+          </section>
+        </div>
+      </ResultsTransition>
     </div>
   );
 }
