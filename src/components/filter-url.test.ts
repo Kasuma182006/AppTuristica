@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { exploreHref, sortHref, splitList } from "./filter-url";
+import { exploreHref, pageHref, sortHref, splitList } from "./filter-url";
 
 describe("splitList", () => {
   it("splits on commas and drops empty parts", () => {
@@ -37,6 +37,18 @@ describe("exploreHref", () => {
 
   it("encodes anything that is not a slug", () => {
     expect(exploreHref({ lugar: "a b&c" }, none)).toBe("/explorar?lugar=a%20b%26c");
+  });
+});
+
+describe("pageHref", () => {
+  it("adds the page at the end, keeping filters and order", () => {
+    const current = new URLSearchParams("tipo=cascada,rio&orden=alfabetico&pagina=2");
+    expect(pageHref(current, 3)).toBe("/explorar?tipo=cascada,rio&orden=alfabetico&pagina=3");
+  });
+
+  it("leaves page 1 out of the address", () => {
+    expect(pageHref(new URLSearchParams("pagina=5"), 1)).toBe("/explorar");
+    expect(pageHref(new URLSearchParams(), 2)).toBe("/explorar?pagina=2");
   });
 });
 

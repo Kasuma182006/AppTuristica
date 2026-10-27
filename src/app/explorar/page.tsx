@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import { FilterFields, FilterFieldsSkeleton } from "@/components/filter-fields";
 import { FilterPanel } from "@/components/filter-panel";
+import { pageHref } from "@/components/filter-url";
+import { PaginationBar } from "@/components/pagination-bar";
 import { PlaceCard } from "@/components/place-card";
 import { SortSelect } from "@/components/sort-select";
 import { toUrlSearchParams, type PageSearchParams } from "@/lib/search-params";
@@ -15,9 +18,10 @@ export const metadata: Metadata = {
 
 const numberFormat = new Intl.NumberFormat("es-CO");
 
-/** The matching sites as cards (HU-52); for now only the first page (pages come in HU-54). */
+/** One page of the matching sites as cards (HU-52), with the numbered pages (HU-54). */
 async function Results({ searchParams }: { searchParams: Promise<PageSearchParams> }) {
-  const query = parsePlaceQuery(toUrlSearchParams(await searchParams));
+  const params = toUrlSearchParams(await searchParams);
+  const query = parsePlaceQuery(params);
   const result = query.ok ? await searchPlaces(query.value) : query;
   if (!query.ok || !result.ok) {
     return (
@@ -27,7 +31,7 @@ async function Results({ searchParams }: { searchParams: Promise<PageSearchParam
     );
   }
 
-  const { total, items } = result.value;
+  const { total, items, page, totalPages } = result.value;
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
@@ -44,6 +48,15 @@ async function Results({ searchParams }: { searchParams: Promise<PageSearchParam
           </li>
         ))}
       </ul>
+      {items.length === 0 && total > 0 ? (
+        <p className="text-muted">
+          La página {page} no existe.{" "}
+          <Link href={pageHref(params, totalPages)} className="text-primary underline">
+            Ir a la última página
+          </Link>
+        </p>
+      ) : null}
+      <PaginationBar page={page} totalPages={totalPages} params={params} />
     </>
   );
 }

@@ -36,6 +36,16 @@ export function exploreHref(
   return parts.length > 0 ? `${EXPLORE_PATH}?${parts.join("&")}` : EXPLORE_PATH;
 }
 
+/** The /explorar address of another results page (HU-54); page 1 is left out. */
+export function pageHref(current: URLSearchParams, page: number): string {
+  const filters = Object.fromEntries(
+    FILTER_PARAMS.map((param) => [param, current.get(param) ?? ""]),
+  );
+  const href = exploreHref(filters, current);
+  if (page <= 1) return href;
+  return `${href}${href.includes("?") ? "&" : "?"}pagina=${page}`;
+}
+
 /**
  * The /explorar address with another order (HU-53), keeping the filters and starting again at
  * page 1. The default order is left out of the address.
