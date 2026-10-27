@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { FilterPanel } from "@/components/filter-panel";
 import { FilterFields, FilterFieldsSkeleton } from "@/components/filter-fields";
+import { LoadError } from "@/components/load-error";
 
 /** HU-43 (RF-01): a short introduction and the filter panel, nothing else. */
 export default function HomePage() {
@@ -15,9 +16,11 @@ export default function HomePage() {
         </p>
       </header>
       <FilterPanel>
-        <Suspense fallback={<FilterFieldsSkeleton />}>
-          <FilterFields />
-        </Suspense>
+        <LoadError what="los filtros">
+          <Suspense fallback={<FilterFieldsSkeleton />}>
+            <FilterFields />
+          </Suspense>
+        </LoadError>
       </FilterPanel>
     </div>
   );

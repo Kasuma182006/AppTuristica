@@ -1,7 +1,7 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 import { pageHref } from "./filter-url";
 import { pageItems, type PageItem } from "./pagination";
+import { ResultsLink } from "./results-transition";
 
 const box = "inline-flex h-11 min-w-11 items-center justify-center rounded-md px-3";
 
@@ -20,10 +20,9 @@ export function PaginationBar({ page, totalPages, params }: Props) {
   if (totalPages <= 1) return null;
 
   const link = (target: number, children: ReactNode, label: string, rel?: string) => (
-    <Link
+    // Not prefetched: each page renders the whole search, so it is only fetched when chosen.
+    <ResultsLink
       href={pageHref(params, target)}
-      // Each page renders the whole search: only fetch it when chosen.
-      prefetch={false}
       rel={rel}
       aria-label={label}
       aria-current={target === page && !rel ? "page" : undefined}
@@ -34,7 +33,7 @@ export function PaginationBar({ page, totalPages, params }: Props) {
       }`}
     >
       {children}
-    </Link>
+    </ResultsLink>
   );
 
   const numbers = (items: PageItem[], visibility: string) =>

@@ -1,4 +1,5 @@
 import { connection } from "next/server";
+import { PAGE_DATA_DEADLINE_MS, withDeadline } from "@/lib/deadline";
 import { toUrlSearchParams, type PageSearchParams } from "@/lib/search-params";
 import { getFilterOptions } from "@/modules/places/service";
 import { AccessFilter } from "./access-filter";
@@ -14,7 +15,10 @@ import { OriginFilter } from "./origin-filter";
  */
 export async function FilterFields({ searchParams }: { searchParams?: Promise<PageSearchParams> }) {
   await connection();
-  const [options, params] = await Promise.all([getFilterOptions(), searchParams]);
+  const [options, params] = await Promise.all([
+    withDeadline(getFilterOptions(), PAGE_DATA_DEADLINE_MS, "los filtros"),
+    searchParams,
+  ]);
   // A repeated parameter is not valid (HU-36): its first value is enough to start with.
   const initial = (param: string) => [params?.[param] ?? []].flat()[0]?.trim();
   return (
