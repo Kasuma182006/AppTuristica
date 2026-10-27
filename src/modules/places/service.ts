@@ -13,8 +13,10 @@ import {
   countRestrictedPlaces,
   findPlaceBySlug,
   findPlaces,
+  type PhotoRow,
   type PlaceDetailRow,
   type PlaceRow,
+  type PlaceSummaryRow,
 } from "./repository";
 import {
   COST_SLUGS,
@@ -34,6 +36,7 @@ import {
   type FilterOptions,
   type PlaceDetail,
   type PlaceLocation,
+  type PlacePhoto,
   type PlaceQuery,
   type PlaceSummary,
 } from "./types";
@@ -65,7 +68,12 @@ export function toPublicLocation(row: Pick<PlaceRow, "location" | "sensitivity">
 }
 
 /** Fields shared by search results and site pages, with Spanish filter values. */
-function toPublicFields(row: PlaceRow): Omit<PlaceSummary, "restricted"> {
+/** Links to the Commons file would reveal the exact location of a fragile site. */
+function toPublicPhoto(photo: PhotoRow, fragile: boolean): PlacePhoto {
+  return fragile ? { ...photo, sourceUrl: null } : photo;
+}
+
+function toPublicFields(row: PlaceRow): Omit<PlaceSummary, "restricted" | "photo"> {
   const origin = slugByOrigin.get(row.origin);
   if (!origin) throw new Error(`No slug for origin ${row.origin}`);
 
@@ -83,8 +91,12 @@ function toPublicFields(row: PlaceRow): Omit<PlaceSummary, "restricted"> {
 }
 
 /** The public shape of a site in search results. */
-export function toPlaceSummary(row: PlaceRow): PlaceSummary {
-  return { ...toPublicFields(row), restricted: row.inProtectedArea || row.privateProperty };
+export function toPlaceSummary(row: PlaceSummaryRow): PlaceSummary {
+  return {
+    ...toPublicFields(row),
+    restricted: row.inProtectedArea || row.privateProperty,
+    photo: row.cover && toPublicPhoto(row.cover, row.sensitivity === "fragile"),
+  };
 }
 
 /**
@@ -124,9 +136,9 @@ export function toPlaceDetail(row: PlaceDetailRow): PlaceDetail {
     fragile,
     inProtectedArea: row.inProtectedArea,
     privateProperty: row.privateProperty,
-    // Links to the OSM element, the Wikidata item or the Commons file would reveal the exact
-    // location of a fragile site.
-    photos: fragile ? row.photos.map((photo) => ({ ...photo, sourceUrl: null })) : row.photos,
+    // Links to the OSM element or the Wikidata item would reveal the exact location of a
+    // fragile site, as would the Commons file (see toPublicPhoto).
+    photos: row.photos.map((photo) => toPublicPhoto(photo, fragile)),
     sources: row.sources.map(({ source, url }) => ({
       source: SOURCE_NAMES[source],
       url: fragile ? null : url,

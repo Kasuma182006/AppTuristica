@@ -87,7 +87,7 @@ export interface PlaceLocation {
   radiusM: number | null;
 }
 
-/** A site in search results: the card data (RF-05) without photo yet. */
+/** A site in search results: the card data (RF-05). */
 export interface PlaceSummary {
   slug: string;
   name: string;
@@ -102,6 +102,8 @@ export interface PlaceSummary {
   confidence: number;
   /** Never exact for fragile sites. */
   location: PlaceLocation;
+  /** The cover (first photo of the gallery), or null: show the type's generic image. */
+  photo: PlacePhoto | null;
 }
 
 /** Values of the `orden` parameter (RF-07); the first one is the default. */
@@ -158,7 +160,7 @@ export interface PlacePhoto {
 }
 
 /** Everything the site page shows (HU-38, RF-10 to RF-15). */
-export interface PlaceDetail extends Omit<PlaceSummary, "restricted"> {
+export interface PlaceDetail extends Omit<PlaceSummary, "restricted" | "photo"> {
   /** Generated from templates or written by the community. */
   description: string | null;
   /** Wikidata's short description (CC0): show it as Wikidata's, never as the site's. */

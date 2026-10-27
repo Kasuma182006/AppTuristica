@@ -30,6 +30,7 @@ const place: PlaceSummary = {
   restricted: false,
   confidence: 30,
   location: { lat: 3.451234, lng: -76.532101, approximate: false, radiusM: null },
+  photo: null,
 };
 
 describe("GET /api/v1/places", () => {

@@ -40,6 +40,11 @@ export interface PlaceRow {
   location: LngLat;
 }
 
+/** A site in search results, with its cover photo (HU-52). */
+export interface PlaceSummaryRow extends PlaceRow {
+  cover: PhotoRow | null;
+}
+
 /** A site with everything its page shows (HU-38). */
 export interface PlaceDetailRow extends PlaceRow {
   description: string | null;
@@ -77,6 +82,16 @@ const SUMMARY_COLUMNS = {
   confidence: places.confidence,
   sensitivity: places.sensitivity,
   location: places.location,
+};
+
+const PHOTO_COLUMNS = {
+  url: photos.url,
+  width: photos.width,
+  height: photos.height,
+  author: photos.author,
+  license: photos.license,
+  licenseUrl: photos.licenseUrl,
+  sourceUrl: photos.sourceUrl,
 };
 
 /** Adds each site's activities, in the catalog's display order. */
@@ -149,11 +164,39 @@ const ORDER_BY: Record<PlaceSort, SQL[]> = {
   alfabetico: [asc(places.name), asc(places.id)],
 };
 
-/** One page of published sites matching the filters, with their activities and the total. */
+/** Adds each site's cover: the first photo in gallery order, or null. */
+async function withCovers<T extends { id: number }>(
+  db: Db,
+  rows: T[],
+): Promise<(T & { cover: PhotoRow | null })[]> {
+  if (rows.length === 0) return [];
+
+  const photoRows = await db
+    .select({ placeId: photos.placeId, ...PHOTO_COLUMNS })
+    .from(photos)
+    .where(
+      inArray(
+        photos.placeId,
+        rows.map((row) => row.id),
+      ),
+    )
+    .orderBy(asc(photos.placeId), asc(photos.sortOrder), asc(photos.id));
+
+  const covers = new Map<number, PhotoRow>();
+  for (const { placeId, ...photo } of photoRows) {
+    if (!covers.has(placeId)) covers.set(placeId, photo);
+  }
+  return rows.map((row) => ({ ...row, cover: covers.get(row.id) ?? null }));
+}
+
+/**
+ * One page of published sites matching the filters, with their activities, covers and the
+ * total.
+ */
 export async function findPlaces(
   db: Db,
   { filters, sort, page, pageSize }: PlaceQuery,
-): Promise<{ rows: PlaceRow[]; total: number }> {
+): Promise<{ rows: PlaceSummaryRow[]; total: number }> {
   const where = and(...filterConditions(db, filters));
 
   const countQuery = db
@@ -174,7 +217,11 @@ export async function findPlaces(
     .offset((page - 1) * pageSize);
 
   const [[counted], rows] = await Promise.all([countQuery, pageQuery]);
-  return { rows: await withActivities(db, rows), total: counted?.total ?? 0 };
+  const [withActs, withCover] = await Promise.all([withActivities(db, rows), withCovers(db, rows)]);
+  return {
+    rows: withActs.map((row, index) => ({ ...row, cover: withCover[index]?.cover ?? null })),
+    total: counted?.total ?? 0,
+  };
 }
 
 /** A published site with its activities, photos and sources; undefined when missing or hidden. */
@@ -198,15 +245,7 @@ export async function findPlaceBySlug(db: Db, slug: string): Promise<PlaceDetail
   const [[withActs], photoRows, sourceRows] = await Promise.all([
     withActivities(db, [row]),
     db
-      .select({
-        url: photos.url,
-        width: photos.width,
-        height: photos.height,
-        author: photos.author,
-        license: photos.license,
-        licenseUrl: photos.licenseUrl,
-        sourceUrl: photos.sourceUrl,
-      })
+      .select(PHOTO_COLUMNS)
       .from(photos)
       .where(eq(photos.placeId, row.id))
       .orderBy(asc(photos.sortOrder), asc(photos.id)),
