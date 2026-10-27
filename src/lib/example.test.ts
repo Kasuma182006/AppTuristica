@@ -7,7 +7,9 @@ describe("vitest setup", () => {
   });
 
   it("resolves the @/ path alias", async () => {
-    const mod = await import("@/app/page");
-    expect(typeof mod.default).toBe("function");
+    // A light module: importing a page pulls in the whole UI and database layer, which timed out
+    // under load (HU-47, HU-50).
+    const mod = await import("@/lib/slug");
+    expect(typeof mod.slugify).toBe("function");
   });
 });

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { FilterOption } from "@/modules/places/types";
 import { joinSelected, toggleValue } from "./chip-filter";
+import { useReportActive } from "./filter-panel-state";
 
 interface Props {
   /** Visible name of the filter, e.g. "Tipo". */
@@ -20,6 +21,7 @@ interface Props {
 export function ChipGroupFilter({ legend, param, options }: Props) {
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const value = joinSelected(options, selected);
+  useReportActive(param, value !== "");
 
   return (
     <fieldset className="space-y-2">

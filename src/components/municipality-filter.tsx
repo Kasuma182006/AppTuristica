@@ -8,6 +8,7 @@ import {
   normalizeForSearch,
   placeCountLabel,
 } from "./municipality-search";
+import { useReportActive } from "./filter-panel-state";
 
 /** URL parameter of the Lugar filter. */
 const PARAM = "lugar";
@@ -32,6 +33,7 @@ export function MunicipalityFilter({ options }: Props) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
+  useReportActive(PARAM, selected !== undefined);
 
   // With a choice made, reopening shows every municipality, not just the chosen one.
   const suggestions = selected ? options : matchByWordStart(options, query);
