@@ -36,6 +36,18 @@ export function exploreHref(
   return parts.length > 0 ? `${EXPLORE_PATH}?${parts.join("&")}` : EXPLORE_PATH;
 }
 
+/** The filters of /explorar values alone, e.g. "/explorar?tipo=cascada,rio": comparable keys. */
+export function filterKey(values: Readonly<Record<string, string>>): string {
+  return exploreHref(values, new URLSearchParams());
+}
+
+/** The filter key of an address's query string. */
+export function filterKeyOf(params: URLSearchParams): string {
+  return filterKey(
+    Object.fromEntries(FILTER_PARAMS.map((param) => [param, params.get(param)?.trim() ?? ""])),
+  );
+}
+
 /** The /explorar address of another results page (HU-54); page 1 is left out. */
 export function pageHref(current: URLSearchParams, page: number): string {
   const filters = Object.fromEntries(

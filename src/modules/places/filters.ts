@@ -25,9 +25,35 @@ export const FILTER_PARAMS = [
 /** Query parameters of order and page (HU-37). */
 export const PAGING_PARAMS = ["orden", "pagina", "por-pagina"] as const;
 
-type FilterParam = (typeof FILTER_PARAMS)[number];
+export type FilterParam = (typeof FILTER_PARAMS)[number];
 type PagingParam = (typeof PAGING_PARAMS)[number];
 type QueryParam = FilterParam | PagingParam;
+
+/** The field of PlaceFilters each filter parameter fills. */
+export const FILTER_FIELDS = {
+  lugar: "municipality",
+  tipo: "placeTypes",
+  actividad: "activities",
+  dificultad: "difficulties",
+  origen: "origins",
+  acceso: "freeAccessOnly",
+} as const satisfies Record<FilterParam, keyof PlaceFilters>;
+
+/** The filters that narrow the search, as their URL parameters. */
+export function activeFilters(filters: PlaceFilters): FilterParam[] {
+  return FILTER_PARAMS.filter((param) => {
+    const value = filters[FILTER_FIELDS[param]];
+    return Array.isArray(value) ? value.length > 0 : Boolean(value);
+  });
+}
+
+/** The same filters with one of them removed. */
+export function withoutFilter(filters: PlaceFilters, param: FilterParam): PlaceFilters {
+  const field = FILTER_FIELDS[param];
+  return field === "freeAccessOnly"
+    ? { ...filters, freeAccessOnly: false }
+    : { ...filters, [field]: undefined };
+}
 
 /** The value `acceso` takes to hide sites with restricted access. */
 export const FREE_ACCESS = "libre";

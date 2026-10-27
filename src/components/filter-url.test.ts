@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { exploreHref, pageHref, sortHref, splitList } from "./filter-url";
+import { exploreHref, filterKey, filterKeyOf, pageHref, sortHref, splitList } from "./filter-url";
 
 describe("splitList", () => {
   it("splits on commas and drops empty parts", () => {
@@ -37,6 +37,20 @@ describe("exploreHref", () => {
 
   it("encodes anything that is not a slug", () => {
     expect(exploreHref({ lugar: "a b&c" }, none)).toBe("/explorar?lugar=a%20b%26c");
+  });
+});
+
+describe("filterKeyOf", () => {
+  it("keeps only the filters, in a fixed order", () => {
+    const params = new URLSearchParams("orden=recientes&tipo=rio&pagina=3&lugar=dagua");
+    expect(filterKeyOf(params)).toBe("/explorar?lugar=dagua&tipo=rio");
+  });
+
+  it("matches the panel's values for the same filters", () => {
+    expect(filterKeyOf(new URLSearchParams("tipo=cascada,rio"))).toBe(
+      filterKey({ tipo: "cascada,rio", lugar: "", origen: "" }),
+    );
+    expect(filterKeyOf(new URLSearchParams("orden=alfabetico"))).toBe(filterKey({}));
   });
 });
 

@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { activeCount, FilterPanelContext, withValue } from "./filter-panel-state";
-import { exploreHref } from "./filter-url";
+import { exploreHref, filterKey, filterKeyOf } from "./filter-url";
 
 type Values = Readonly<Record<string, string>>;
 
@@ -33,8 +33,10 @@ export function FilterPanel({ children, live = false }: Props) {
   const [values, setValues] = useState<Values>({});
   // Read by the callbacks, which must not change on every report.
   const valuesRef = useRef<Values>({});
-  // Changing the key remounts every filter, empty.
-  const [resetCount, setResetCount] = useState(0);
+  // Changing the key remounts every filter: empty after "Limpiar filtros", else from the address.
+  const [mount, setMount] = useState({ key: 0, cleared: false });
+  // The last address the panel matched, so a mismatch it cannot fix only remounts once.
+  const syncedRef = useRef<string | null>(null);
   const [open, setOpen] = useState(false);
   const submitRef = useRef<HTMLButtonElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
@@ -63,10 +65,23 @@ export function FilterPanel({ children, live = false }: Props) {
     [live, showResults],
   );
 
-  const state = useMemo(() => ({ report, cleared: resetCount > 0 }), [report, resetCount]);
+  const syncAddress = useCallback((addressFilters: string) => {
+    // A render for an older address can still arrive; only the one shown counts.
+    const shown = filterKeyOf(new URLSearchParams(window.location.search));
+    if (addressFilters !== shown || addressFilters === syncedRef.current) return;
+    syncedRef.current = addressFilters;
+    if (addressFilters !== filterKey(valuesRef.current)) {
+      setMount((current) => ({ key: current.key + 1, cleared: false }));
+    }
+  }, []);
+
+  const state = useMemo(
+    () => ({ report, cleared: mount.cleared, syncAddress }),
+    [report, mount.cleared, syncAddress],
+  );
 
   function clear() {
-    setResetCount((current) => current + 1);
+    setMount((current) => ({ key: current.key + 1, cleared: true }));
     if (live) showResults({});
     // This button disappears: keep the keyboard focus in the panel.
     const target = live ? [toggleRef.current, headingRef.current].find(isShown) : submitRef.current;
@@ -86,7 +101,7 @@ export function FilterPanel({ children, live = false }: Props) {
 
   const fields = (
     <FilterPanelContext value={state}>
-      <div key={resetCount} className="space-y-4">
+      <div key={mount.key} className="space-y-4">
         {children}
       </div>
     </FilterPanelContext>

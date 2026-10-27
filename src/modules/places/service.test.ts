@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Catalogs } from "@/modules/catalogs/types";
 import type { PhotoRow, PlaceDetailRow, PlaceSummaryRow } from "./repository";
-import type { PlaceQuery } from "./types";
+import type { PlaceFilters, PlaceQuery } from "./types";
 
 const findPlaces = vi.fn<() => Promise<{ rows: PlaceSummaryRow[]; total: number }>>();
 const findPlaceBySlug = vi.fn<(slug: string) => Promise<PlaceDetailRow | undefined>>();
+const countPlaces = vi.fn<(filters: PlaceFilters) => Promise<number>>();
 const catalogs: Catalogs = {
   municipalities: [{ slug: "dagua", name: "Dagua" }],
   placeTypes: [{ slug: "cascada", name: "Cascada" }],
@@ -14,11 +15,13 @@ const catalogs: Catalogs = {
 vi.mock("@/lib/db", () => ({ getDb: () => undefined }));
 vi.mock("@/modules/catalogs/service", () => ({ getCatalogs: () => Promise.resolve(catalogs) }));
 vi.mock("./repository", () => ({
+  countPlaces: (_db: unknown, filters: PlaceFilters) => countPlaces(filters),
   findPlaces: () => findPlaces(),
   findPlaceBySlug: (_db: unknown, slug: string) => findPlaceBySlug(slug),
 }));
 
-const { getPlace, searchPlaces, toPlaceDetail, toPlaceSummary } = await import("./service");
+const { countWithoutEachFilter, getPlace, searchPlaces, toPlaceDetail, toPlaceSummary } =
+  await import("./service");
 
 const row: PlaceSummaryRow = {
   id: 7,
@@ -85,6 +88,35 @@ describe("toPlaceSummary", () => {
     ["on private property", { privateProperty: true }],
   ])("marks sites %s as restricted", (_label, flags) => {
     expect(toPlaceSummary({ ...row, ...flags }).restricted).toBe(true);
+  });
+});
+
+describe("countWithoutEachFilter (HU-55)", () => {
+  afterEach(() => countPlaces.mockReset());
+
+  it("counts the sites without each active filter, most first, leaving out zeros", async () => {
+    countPlaces.mockImplementation(async (filters) => {
+      if (!filters.placeTypes) return 313;
+      if (!filters.activities) return 32;
+      return 0;
+    });
+    const filters: PlaceFilters = {
+      municipality: "dagua",
+      placeTypes: ["cascada"],
+      activities: ["senderismo"],
+      freeAccessOnly: false,
+    };
+
+    expect(await countWithoutEachFilter(filters)).toEqual([
+      { param: "tipo", total: 313 },
+      { param: "actividad", total: 32 },
+    ]);
+    expect(countPlaces).toHaveBeenCalledTimes(3);
+  });
+
+  it("queries nothing without filters", async () => {
+    expect(await countWithoutEachFilter({ freeAccessOnly: false })).toEqual([]);
+    expect(countPlaces).not.toHaveBeenCalled();
   });
 });
 

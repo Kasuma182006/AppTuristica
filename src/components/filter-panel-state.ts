@@ -9,12 +9,26 @@ interface FilterPanelState {
   report: ReportValue;
   /** After "Limpiar filtros" the filters start empty instead of from the address. */
   cleared: boolean;
+  /** The filters of the address the page was rendered for (see AddressSync). */
+  syncAddress: (filters: string) => void;
 }
 
 export const FilterPanelContext = createContext<FilterPanelState>({
   report: () => {},
   cleared: false,
+  syncAddress: () => {},
 });
+
+/**
+ * Tells the panel which filters the page was rendered for (HU-55), e.g. "/explorar?tipo=rio".
+ * When the address changed without the panel (Back, a link of the empty state), the panel
+ * starts again from it. Render it after the filters, so they have reported their values.
+ */
+export function AddressSync({ filters }: { filters: string }): null {
+  const { syncAddress } = useContext(FilterPanelContext);
+  useEffect(() => syncAddress(filters), [syncAddress, filters]);
+  return null;
+}
 
 /**
  * The value a filter starts with: its parameter in the address (HU-51), so opening a shared

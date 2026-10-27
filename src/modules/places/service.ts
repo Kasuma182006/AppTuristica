@@ -3,7 +3,13 @@ import { APPROX_RADIUS_M, approximateLocation, roundCoordinate } from "@/lib/geo
 import { SLUG_PATTERN } from "@/lib/slug";
 import { getCatalogs } from "@/modules/catalogs/service";
 import type { CatalogItem } from "@/modules/catalogs/types";
-import { findUnknownSlug, type ParseResult } from "./filters";
+import {
+  activeFilters,
+  findUnknownSlug,
+  withoutFilter,
+  type FilterParam,
+  type ParseResult,
+} from "./filters";
 import {
   countPlacesByActivity,
   countPlacesByDifficulty,
@@ -12,6 +18,7 @@ import {
   countPlacesByPlaceType,
   countRestrictedPlaces,
   findPlaceBySlug,
+  countPlaces,
   findPlaces,
   type PhotoRow,
   type PlaceDetailRow,
@@ -35,6 +42,7 @@ import {
   type FilterOption,
   type FilterOptions,
   type PlaceDetail,
+  type PlaceFilters,
   type PlaceLocation,
   type PlacePhoto,
   type PlaceQuery,
@@ -119,6 +127,24 @@ export async function searchPlaces(query: PlaceQuery): Promise<ParseResult<Page<
       totalPages: Math.ceil(total / query.pageSize),
     },
   };
+}
+
+/**
+ * For a search without results (HU-55): how many sites there would be without each active
+ * filter, so the visitor knows which one to remove. Most useful first; filters whose removal
+ * still finds nothing are left out.
+ */
+export async function countWithoutEachFilter(
+  filters: PlaceFilters,
+): Promise<{ param: FilterParam; total: number }[]> {
+  const db = getDb();
+  const counts = await Promise.all(
+    activeFilters(filters).map(async (param) => ({
+      param,
+      total: await countPlaces(db, withoutFilter(filters, param)),
+    })),
+  );
+  return counts.filter((count) => count.total > 0).sort((a, b) => b.total - a.total);
 }
 
 /** The public shape of a site page (HU-38): the summary plus description, photos and sources. */
