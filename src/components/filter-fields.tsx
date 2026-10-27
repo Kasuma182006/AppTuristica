@@ -1,5 +1,6 @@
 import { connection } from "next/server";
 import { getFilterOptions } from "@/modules/places/service";
+import { AccessFilter } from "./access-filter";
 import { ChipGroupFilter } from "./chip-group-filter";
 import { MunicipalityFilter } from "./municipality-filter";
 import { OriginFilter } from "./origin-filter";
@@ -15,6 +16,7 @@ export async function FilterFields() {
       <ChipGroupFilter legend="Actividad" param="actividad" options={options.activities} />
       <ChipGroupFilter legend="Dificultad" param="dificultad" options={options.difficulties} />
       <OriginFilter options={options.origins} />
+      <AccessFilter restrictedCount={options.restrictedCount} />
     </>
   );
 }
@@ -27,7 +29,7 @@ export function FilterFieldsSkeleton() {
         <p className="font-medium">Lugar</p>
         <div className="h-11 w-full animate-pulse rounded-md border border-border bg-bg" />
       </div>
-      {["Tipo", "Actividad", "Dificultad", "Origen"].map((legend) => (
+      {["Tipo", "Actividad", "Dificultad", "Origen", "Acceso"].map((legend) => (
         <div key={legend} className="space-y-2">
           <p className="font-medium">{legend}</p>
           <div className="h-24 w-full animate-pulse rounded-md bg-bg" />

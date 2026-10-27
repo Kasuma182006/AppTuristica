@@ -279,3 +279,14 @@ export async function countPlacesByOrigin(db: Db): Promise<Map<Origin, number>> 
     .groupBy(places.origin);
   return new Map(rows.map((row) => [row.origin, row.total]));
 }
+
+/** Published sites in a protected area or on private property (HU-49). */
+export async function countRestrictedPlaces(db: Db): Promise<number> {
+  const [row] = await db
+    .select({ total: count() })
+    .from(places)
+    .where(
+      and(isPublished, or(eq(places.inProtectedArea, true), eq(places.privateProperty, true))),
+    );
+  return row?.total ?? 0;
+}

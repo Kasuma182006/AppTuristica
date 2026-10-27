@@ -8,6 +8,7 @@ import {
   countPlacesByMunicipality,
   countPlacesByOrigin,
   countPlacesByPlaceType,
+  countRestrictedPlaces,
   findPlaceBySlug,
   findPlaces,
 } from "./repository";
@@ -154,6 +155,16 @@ describe("hidden sites are not counted (HU-40, HU-44)", () => {
 
     expect(queries).toHaveLength(1);
     expect(queries[0]?.sql).toMatch(/^select "origin", count\(\*\) from "places" where/);
+    expect(queries.every(requiresPublished)).toBe(true);
+  });
+
+  it("the count of sites with restricted access", async () => {
+    const queries = await sentQueries((db) => countRestrictedPlaces(db));
+
+    expect(queries).toHaveLength(1);
+    expect(queries[0]?.sql).toContain(
+      '("places"."in_protected_area" = $2 or "places"."private_property" = $3)',
+    );
     expect(queries.every(requiresPublished)).toBe(true);
   });
 });

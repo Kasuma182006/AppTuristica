@@ -10,6 +10,7 @@ import {
   countPlacesByMunicipality,
   countPlacesByOrigin,
   countPlacesByPlaceType,
+  countRestrictedPlaces,
   findPlaceBySlug,
   findPlaces,
   type PlaceDetailRow,
@@ -146,10 +147,10 @@ function withCounts(items: CatalogItem[], counts: ReadonlyMap<string, number>): 
   return items.map((item) => ({ ...item, placeCount: counts.get(item.slug) ?? 0 }));
 }
 
-/** Every value of the panel's filters, with its published sites (HU-44 to HU-48). */
+/** Every value of the panel's filters, with its published sites (HU-44 to HU-49). */
 export async function getFilterOptions(): Promise<FilterOptions> {
   const db = getDb();
-  const [catalogs, byMunicipality, byPlaceType, byActivity, byDifficulty, byOrigin] =
+  const [catalogs, byMunicipality, byPlaceType, byActivity, byDifficulty, byOrigin, restricted] =
     await Promise.all([
       getCatalogs(),
       countPlacesByMunicipality(db),
@@ -157,6 +158,7 @@ export async function getFilterOptions(): Promise<FilterOptions> {
       countPlacesByActivity(db),
       countPlacesByDifficulty(db),
       countPlacesByOrigin(db),
+      countRestrictedPlaces(db),
     ]);
   return {
     municipalities: withCounts(catalogs.municipalities, byMunicipality),
@@ -172,5 +174,6 @@ export async function getFilterOptions(): Promise<FilterOptions> {
       name: ORIGIN_LABELS[slug as OriginSlug],
       placeCount: byOrigin.get(value) ?? 0,
     })),
+    restrictedCount: restricted,
   };
 }

@@ -74,6 +74,8 @@ export interface FilterOptions {
   difficulties: FilterOption[];
   /** Open data first, then the community. */
   origins: FilterOption[];
+  /** Sites in a protected area or on private property, hidden by `acceso=libre` (HU-49). */
+  restrictedCount: number;
 }
 
 /** Where to draw a site: exact, or the center of a ~2 km area for fragile sites (HU-39). */
