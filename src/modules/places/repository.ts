@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, exists, inArray, isNull, or, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, exists, inArray, isNull, or, sql, type SQL } from "drizzle-orm";
 import {
   activities,
   municipalities,
@@ -160,7 +160,13 @@ function filterConditions(db: Db, filters: PlaceFilters): SQL[] {
 /** Ties break by name, then id, so pages never overlap. */
 const ORDER_BY: Record<PlaceSort, SQL[]> = {
   confianza: [desc(places.confidence), asc(places.name), asc(places.id)],
-  recientes: [desc(places.createdAt), asc(places.name), asc(places.id)],
+  // By day in Colombia, then the most complete: a whole ingest run shares a day (HU-53).
+  recientes: [
+    desc(sql`date_trunc('day', ${places.createdAt} at time zone 'America/Bogota')`),
+    desc(places.confidence),
+    asc(places.name),
+    asc(places.id),
+  ],
   alfabetico: [asc(places.name), asc(places.id)],
 };
 

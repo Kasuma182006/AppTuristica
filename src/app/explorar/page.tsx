@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { FilterFields, FilterFieldsSkeleton } from "@/components/filter-fields";
 import { FilterPanel } from "@/components/filter-panel";
 import { PlaceCard } from "@/components/place-card";
+import { SortSelect } from "@/components/sort-select";
 import { toUrlSearchParams, type PageSearchParams } from "@/lib/search-params";
 import { parsePlaceQuery } from "@/modules/places/filters";
 import { searchPlaces } from "@/modules/places/service";
@@ -18,7 +19,7 @@ const numberFormat = new Intl.NumberFormat("es-CO");
 async function Results({ searchParams }: { searchParams: Promise<PageSearchParams> }) {
   const query = parsePlaceQuery(toUrlSearchParams(await searchParams));
   const result = query.ok ? await searchPlaces(query.value) : query;
-  if (!result.ok) {
+  if (!query.ok || !result.ok) {
     return (
       <p role="alert" className="text-muted">
         Algún filtro de la dirección no es válido. Elige los filtros de nuevo.
@@ -29,10 +30,13 @@ async function Results({ searchParams }: { searchParams: Promise<PageSearchParam
   const { total, items } = result.value;
   return (
     <>
-      {/* Announces the new count after each filter change. */}
-      <p aria-live="polite" className="text-lg">
-        {total === 1 ? "1 sitio encontrado" : `${numberFormat.format(total)} sitios encontrados`}
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        {/* Announces the new count after each filter change. */}
+        <p aria-live="polite" className="text-lg">
+          {total === 1 ? "1 sitio encontrado" : `${numberFormat.format(total)} sitios encontrados`}
+        </p>
+        <SortSelect sort={query.value.sort} />
+      </div>
       <ul className="grid gap-4 sm:grid-cols-2">
         {items.map((place) => (
           <li key={place.slug}>

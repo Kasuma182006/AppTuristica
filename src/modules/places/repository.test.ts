@@ -114,6 +114,22 @@ describe("hidden sites never appear (HU-40)", () => {
   });
 });
 
+describe("sort orders (HU-37, HU-53)", () => {
+  it.each([
+    ["confianza", /^"places"\."confidence" desc, "places"\."name" asc, "places"\."id" asc$/],
+    [
+      "recientes",
+      /^date_trunc\('day', "places"\."created_at" at time zone 'America\/Bogota'\) desc, "places"\."confidence" desc, "places"\."name" asc, "places"\."id" asc$/,
+    ],
+    ["alfabetico", /^"places"\."name" asc, "places"\."id" asc$/],
+  ] as const)("%s", async (sort, expected) => {
+    const [, page] = await sentQueries((db) => findPlaces(db, { ...query(), sort }));
+    const orderBy = page?.sql.split(" order by ")[1]?.split(" limit ")[0];
+
+    expect(orderBy).toMatch(expected);
+  });
+});
+
 describe("hidden sites are not counted (HU-40, HU-44)", () => {
   it("the site count per municipality", async () => {
     const queries = await sentQueries((db) => countPlacesByMunicipality(db));
