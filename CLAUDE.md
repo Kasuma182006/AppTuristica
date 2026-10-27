@@ -106,7 +106,8 @@ SQL que Drizzle no genera (extensiones, funciones): `npx drizzle-kit generate --
 API: respuestas `{ data }` (listas paginadas: `{ data, meta }` con `apiPage`) con claves en inglés
 (valores en español) y errores con `apiError` de `src/lib/api-response.ts`. Parámetros de búsqueda en
 español: filtros (`lugar`, `tipo`…, listas con comas), `orden`, `pagina`, `por-pagina` (`modules/places/filters.ts`). La base se obtiene con `getDb()` (`src/lib/db.ts`, perezosa: la CI construye
-sin `DATABASE_URL`). Toda ruta de `/api/v1` se envuelve en `publicApi` (`src/lib/public-api.ts`: `connection()`,
+sin `DATABASE_URL`). El cliente va sin prepared statements ni pipelining (`max_pipeline: 0`): por el pooler de
+Supabase, encolar consultas en una conexión ocupada colgaba el servidor (HU-51); no quitarlo. Toda ruta de `/api/v1` se envuelve en `publicApi` (`src/lib/public-api.ts`: `connection()`,
 límite de 60/min por IP con 429 + `Retry-After`, CORS `*`) y exporta `OPTIONS = corsPreflight`. El límite usa
 la tabla `rate_limits` (`src/lib/rate-limit.ts`, reutilizable con otra ventana para HU-82); la IP solo se guarda
 como HMAC con `IP_HASH_SECRET` (`src/lib/ip-hash.ts`), el mismo valor en local y en Vercel.

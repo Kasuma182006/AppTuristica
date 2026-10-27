@@ -3,22 +3,33 @@
 import { useState } from "react";
 import type { FilterOption } from "@/modules/places/types";
 import { canUncheck, checkedParam, toggleValue } from "./chip-filter";
-import { useReportActive } from "./filter-panel-state";
+import { useFilterValue, useInitialValue } from "./filter-panel-state";
+import { splitList } from "./filter-url";
 
 /** URL parameter of the Origen filter. */
 const PARAM = "origen";
 
+interface Props {
+  options: FilterOption[];
+  /** The parameter's value in the address, e.g. "comunidad". */
+  initial?: string;
+}
+
 /**
  * Origen filter (HU-48): one checkbox per origin, all checked by default (no filter). At least
- * one stays checked; unchecking one sends only the others, e.g. ?origen=comunidad.
+ * one stays checked; unchecking one sends only the others, e.g. ?origen=comunidad. Starts with
+ * the address's choice (HU-51).
  */
-export function OriginFilter({ options }: { options: FilterOption[] }) {
-  const [checked, setChecked] = useState<ReadonlySet<string>>(
-    () => new Set(options.map((option) => option.slug)),
-  );
+export function OriginFilter({ options, initial: fromAddress }: Props) {
+  const initial = useInitialValue(fromAddress);
+  const [checked, setChecked] = useState<ReadonlySet<string>>(() => {
+    const chosen = splitList(initial).filter((slug) => options.some((o) => o.slug === slug));
+    // Nothing valid in the address means no filter: every origin checked.
+    return new Set(chosen.length > 0 ? chosen : options.map((option) => option.slug));
+  });
   const [blocked, setBlocked] = useState(false);
   const value = checkedParam(options, checked);
-  useReportActive(PARAM, value !== "");
+  useFilterValue(PARAM, value);
 
   function onToggle(slug: string) {
     const allowed = canUncheck(checked, slug);

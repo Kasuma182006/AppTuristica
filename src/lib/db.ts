@@ -7,9 +7,21 @@ export type Db = ReturnType<typeof createDb>;
 // Reuse the client across hot reloads in development to avoid exhausting connections.
 const globalForDb = globalThis as unknown as { db?: Db };
 
-function createDb(url: string) {
+/** postgres.js reads `max_pipeline` (default 100) but leaves it out of its types. */
+type ClientOptions = postgres.Options<Record<string, never>> & { max_pipeline: number };
+
+const clientOptions: ClientOptions = {
   // Supabase transaction pooler does not support prepared statements.
-  return drizzle(postgres(url, { prepare: false }), { schema });
+  prepare: false,
+  // Never queue a query behind another on a busy connection: through the transaction pooler
+  // those connections stop answering, and from then on every page hangs until the
+  // statement_timeout (HU-51: six simultaneous requests were enough). Extra queries wait for a
+  // free connection instead.
+  max_pipeline: 0,
+};
+
+function createDb(url: string) {
+  return drizzle(postgres(url, clientOptions), { schema });
 }
 
 /**

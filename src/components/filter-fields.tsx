@@ -1,22 +1,43 @@
 import { connection } from "next/server";
+import type { PageSearchParams } from "@/lib/search-params";
 import { getFilterOptions } from "@/modules/places/service";
 import { AccessFilter } from "./access-filter";
 import { ChipGroupFilter } from "./chip-group-filter";
 import { MunicipalityFilter } from "./municipality-filter";
 import { OriginFilter } from "./origin-filter";
 
-/** The panel's filters with their values and site counts, read at request time. */
-export async function FilterFields() {
+/**
+ * The panel's filters with their values and site counts, read at request time. With the page's
+ * `searchParams`, each filter starts with its value in the address (HU-51).
+ */
+export async function FilterFields({ searchParams }: { searchParams?: Promise<PageSearchParams> }) {
   await connection();
-  const options = await getFilterOptions();
+  const [options, params] = await Promise.all([getFilterOptions(), searchParams]);
+  // A repeated parameter is not valid (HU-36): its first value is enough to start with.
+  const initial = (param: string) => [params?.[param] ?? []].flat()[0]?.trim();
   return (
     <>
-      <MunicipalityFilter options={options.municipalities} />
-      <ChipGroupFilter legend="Tipo" param="tipo" options={options.placeTypes} />
-      <ChipGroupFilter legend="Actividad" param="actividad" options={options.activities} />
-      <ChipGroupFilter legend="Dificultad" param="dificultad" options={options.difficulties} />
-      <OriginFilter options={options.origins} />
-      <AccessFilter restrictedCount={options.restrictedCount} />
+      <MunicipalityFilter options={options.municipalities} initial={initial("lugar")} />
+      <ChipGroupFilter
+        legend="Tipo"
+        param="tipo"
+        options={options.placeTypes}
+        initial={initial("tipo")}
+      />
+      <ChipGroupFilter
+        legend="Actividad"
+        param="actividad"
+        options={options.activities}
+        initial={initial("actividad")}
+      />
+      <ChipGroupFilter
+        legend="Dificultad"
+        param="dificultad"
+        options={options.difficulties}
+        initial={initial("dificultad")}
+      />
+      <OriginFilter options={options.origins} initial={initial("origen")} />
+      <AccessFilter restrictedCount={options.restrictedCount} initial={initial("acceso")} />
     </>
   );
 }
