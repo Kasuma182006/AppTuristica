@@ -16,6 +16,16 @@ describe("commonsThumbUrl", () => {
 
   it("never asks for more than the largest allowed width", () => {
     expect(commonsThumbUrl(file, 1920, 3000)).toContain("/500px-Lago_Calima.jpg");
+    expect(commonsThumbUrl(file, 1920, 3000, 960)).toContain("/960px-Lago_Calima.jpg");
+  });
+
+  it("goes up to 960 px only when asked (the gallery)", () => {
+    expect(commonsThumbUrl(file, 640, 3000)).toContain("/500px-Lago_Calima.jpg");
+    expect(commonsThumbUrl(file, 640, 3000, 960)).toContain("/960px-Lago_Calima.jpg");
+    expect(commonsThumbUrl(file, 400, 3000, 960)).toContain("/500px-Lago_Calima.jpg");
+    expect(commonsThumbUrl(file, 640, 960, 960)).toBe(
+      "https://upload.wikimedia.org/wikipedia/commons/1/14/Lago_Calima.jpg",
+    );
   });
 
   it("uses the file itself, without tracking parameters, when it is already small", () => {
