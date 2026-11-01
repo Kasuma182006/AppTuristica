@@ -410,7 +410,8 @@ describe("fragile sites (HU-39)", () => {
         sourceUrl: null,
       },
     ]);
-    // The article covers the whole river or lake, not the protected point.
-    expect(detail.wikipediaUrl).toBe("https://es.wikipedia.org/wiki/R%C3%ADo_Cauca");
+    // Wikipedia articles carry coordinates (HU-59); Wikidata's text reveals nothing.
+    expect(detail.wikipediaUrl).toBeNull();
+    expect(detail.wikidataDescription).toBe("río de Colombia");
   });
 });

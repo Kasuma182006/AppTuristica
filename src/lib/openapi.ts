@@ -504,7 +504,10 @@ export const openApiDocument: OpenApiDocument = {
             "string",
             "Descripción corta de Wikidata (CC0). Muéstrala como de Wikidata, no como del sitio.",
           ),
-          wikipediaUrl: nullable("string", "Artículo en Wikipedia en español."),
+          wikipediaUrl: nullable(
+            "string",
+            "Artículo en Wikipedia en español; null en sitios frágiles (trae coordenadas).",
+          ),
           altitudeM: nullable("integer", "Altitud en metros."),
           cost: {
             type: ["string", "null"],
