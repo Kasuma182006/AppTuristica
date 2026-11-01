@@ -4,7 +4,9 @@ import { connection } from "next/server";
 import { cache, Suspense } from "react";
 import { BackToResults } from "@/components/last-search";
 import { LoadError } from "@/components/load-error";
+import { PhotoGallery } from "@/components/photo-gallery";
 import { placeFacts } from "@/components/place-facts";
+import { PlaceTypeImage } from "@/components/place-type-image";
 import { PAGE_DATA_DEADLINE_MS, withDeadline } from "@/lib/deadline";
 import { getPlace } from "@/modules/places/service";
 
@@ -29,7 +31,7 @@ export async function generateMetadata({ params }: PageProps<"/lugar/[slug]">): 
   };
 }
 
-/** HU-59 (RF-10): what the site is and what can be done there. */
+/** HU-59 (RF-10): what the site is and what can be done there; HU-60 (RF-11): its photos. */
 async function PlaceContent({ params }: { params: PageProps<"/lugar/[slug]">["params"] }) {
   await connection();
   const { slug } = await params;
@@ -49,6 +51,20 @@ async function PlaceContent({ params }: { params: PageProps<"/lugar/[slug]">["pa
           {place.placeType.name} · {place.municipality.name}
         </p>
       </header>
+
+      {place.photos.length > 0 ? (
+        <PhotoGallery
+          photos={place.photos}
+          placeName={place.name}
+          placeTypeSlug={place.placeType.slug}
+        />
+      ) : (
+        // Without photos, the generic image of the type: a low band, it adds no information.
+        <PlaceTypeImage
+          slug={place.placeType.slug}
+          className="aspect-[3/1] w-full max-w-3xl rounded-xl"
+        />
+      )}
 
       <section aria-labelledby="descripcion" className="max-w-prose space-y-3">
         <h2 id="descripcion" className="sr-only">
