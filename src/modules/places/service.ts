@@ -179,7 +179,8 @@ export function toPlaceDetail(row: PlaceDetailRow): PlaceDetail {
     ...toPublicFields(row),
     description: row.description,
     wikidataDescription: row.wikidataDescription,
-    wikipediaUrl: row.wikipediaUrl,
+    // The article usually has the coordinates of a lake or a reserve (HU-59).
+    wikipediaUrl: fragile ? null : row.wikipediaUrl,
     altitudeM: row.altitudeM,
     cost: row.cost ? (slugByCost.get(row.cost) ?? null) : null,
     fragile,

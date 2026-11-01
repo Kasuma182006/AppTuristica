@@ -149,6 +149,12 @@ export const COST_SLUGS = { gratis: "free", pago: "paid" } as const satisfies Re
 
 export type CostSlug = keyof typeof COST_SLUGS;
 
+/** How the entrance cost is shown on the site page. */
+export const COST_LABELS = {
+  gratis: "Gratis",
+  pago: "Con costo",
+} as const satisfies Record<CostSlug, string>;
+
 /** Source names in API responses: OSM and Wikidata keep their own, the community is Spanish. */
 export const SOURCE_NAMES = {
   openstreetmap: "openstreetmap",
@@ -174,6 +180,7 @@ export interface PlaceDetail extends Omit<PlaceSummary, "restricted" | "photo"> 
   description: string | null;
   /** Wikidata's short description (CC0): show it as Wikidata's, never as the site's. */
   wikidataDescription: string | null;
+  /** Null for fragile sites: the article may give the coordinates. */
   wikipediaUrl: string | null;
   altitudeM: number | null;
   cost: CostSlug | null;

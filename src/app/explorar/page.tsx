@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { FilterFields, FilterFieldsSkeleton } from "@/components/filter-fields";
 import { EmptyResults } from "@/components/empty-results";
 import { FilterPanel } from "@/components/filter-panel";
+import { RememberSearch } from "@/components/last-search";
 import { LoadError } from "@/components/load-error";
 import { pageHref, viewOf, type View } from "@/components/filter-url";
 import { PaginationBar } from "@/components/pagination-bar";
@@ -56,12 +57,15 @@ async function Results({ searchParams }: { searchParams: Promise<PageSearchParam
   const query = parsePlaceQuery(params);
   if (!query.ok) return invalidAddress;
   const { filters, sort } = query.value;
+  // The site pages link back to this exact search (HU-59).
+  const remember = <RememberSearch href={pageHref(params, query.value.page)} />;
 
   if (viewOf(params) === "mapa") {
     const points = await withDeadline(searchPlacePoints(filters), PAGE_DATA_DEADLINE_MS, "el mapa");
     if (!points.ok) return invalidAddress;
     return (
       <>
+        {remember}
         <ResultsHeader total={points.value.length} view="mapa" />
         {points.value.length === 0 ? (
           <EmptyResults filters={filters} params={params} />
@@ -82,6 +86,7 @@ async function Results({ searchParams }: { searchParams: Promise<PageSearchParam
   const { total, items, page, totalPages } = result.value;
   return (
     <>
+      {remember}
       <ResultsHeader total={total} view="lista" sort={sort} />
       {total === 0 ? <EmptyResults filters={filters} params={params} /> : null}
       <ul className="grid gap-4 sm:grid-cols-2">
