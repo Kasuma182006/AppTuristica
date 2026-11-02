@@ -14,6 +14,7 @@ import {
   countRestrictedPlaces,
   findOtherPlacesInMunicipality,
   findPlaceBySlug,
+  findPlacesNear,
   findPlaces,
   findSitemapPlaces,
   publishedPlaceExists,
@@ -172,6 +173,16 @@ describe("sort orders (HU-37, HU-53)", () => {
     const orderBy = page?.sql.split(" order by ")[1]?.split(" limit ")[0];
 
     expect(orderBy).toMatch(expected);
+  });
+});
+
+describe("hidden sites are never offered as duplicates (HU-81)", () => {
+  it("the sites near a point", async () => {
+    const queries = await sentQueries((db) => findPlacesNear(db, { lat: 3.45, lon: -76.53 }, 0.04));
+
+    expect(queries).toHaveLength(1);
+    expect(queries[0]?.sql).toMatch(/ST_DWithin/);
+    expect(queries.every(requiresPublished)).toBe(true);
   });
 });
 

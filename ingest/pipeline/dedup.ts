@@ -1,21 +1,11 @@
+import { distanceM, DUPLICATE_DISTANCE_M } from "@/lib/geo";
 import { slugify } from "@/lib/slug";
-import type { Point, RestrictedSite } from "./types";
+import type { RestrictedSite } from "./types";
 
-/** Sites closer than this, of the same type and with similar names, are the same place. */
-export const DUPLICATE_DISTANCE_M = 200;
+export { distanceM, DUPLICATE_DISTANCE_M };
+
 // Place type slug of protected areas (db/seeds/place-types.ts).
 const RESERVE_TYPE_SLUG = "reserva-natural";
-const EARTH_RADIUS_M = 6_371_000;
-
-export function distanceM(a: Point, b: Point): number {
-  const toRad = Math.PI / 180;
-  const dLat = (b.lat - a.lat) * toRad;
-  const dLon = (b.lon - a.lon) * toRad;
-  const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(a.lat * toRad) * Math.cos(b.lat * toRad) * Math.sin(dLon / 2) ** 2;
-  return 2 * EARTH_RADIUS_M * Math.asin(Math.sqrt(h));
-}
 
 /**
  * Equal, or one contained in the other as whole words, ignoring case, accents and punctuation:

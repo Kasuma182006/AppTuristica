@@ -1,11 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TURNSTILE_TOKEN_FIELD } from "@/lib/turnstile";
 import { getCatalogs, locateInMunicipality } from "@/modules/catalogs/service";
+import { findPossibleDuplicates } from "@/modules/places/service";
+import { NOT_DUPLICATE_FIELD } from "./schemas";
 import { catalogErrors, receiveProposal } from "./service";
 
 vi.mock("@/modules/catalogs/service", () => ({
   getCatalogs: vi.fn(),
   locateInMunicipality: vi.fn(),
+}));
+
+vi.mock("@/modules/places/service", () => ({
+  findPossibleDuplicates: vi.fn(),
 }));
 
 const fetchMock = vi.fn<typeof fetch>();
@@ -51,6 +57,7 @@ beforeEach(() => {
   cloudflareAnswers(true);
   vi.mocked(getCatalogs).mockResolvedValue(catalogs);
   vi.mocked(locateInMunicipality).mockResolvedValue(inCali);
+  vi.mocked(findPossibleDuplicates).mockResolvedValue([]);
 });
 
 afterEach(() => {
@@ -151,6 +158,38 @@ describe("receiveProposal: fields (HU-80)", () => {
   it("fails when the database fails, so the visitor can try again", async () => {
     vi.mocked(getCatalogs).mockRejectedValue(new Error("database down"));
     await expect(receiveProposal(form())).rejects.toThrow("database down");
+  });
+});
+
+describe("receiveProposal: duplicates (HU-81)", () => {
+  const burro = { slug: "charco-del-burro", name: "Charco del Burro" };
+
+  it("offers the sites that may be the same, looking from the located point", async () => {
+    const moved = { lat: 3.46, lon: -76.54 };
+    vi.mocked(locateInMunicipality).mockResolvedValue({ ...inCali, point: moved });
+    vi.mocked(findPossibleDuplicates).mockResolvedValue([burro]);
+
+    await expect(receiveProposal(form())).resolves.toEqual({
+      status: "duplicate",
+      duplicates: [burro],
+    });
+    expect(findPossibleDuplicates).toHaveBeenCalledWith(moved, "Charco del Burro");
+  });
+
+  it("continues when the visitor says it is none of them", async () => {
+    vi.mocked(findPossibleDuplicates).mockResolvedValue([burro]);
+    await expect(receiveProposal(form({ [NOT_DUPLICATE_FIELD]: "on" }))).resolves.toEqual({
+      status: "received",
+    });
+    expect(findPossibleDuplicates).not.toHaveBeenCalled();
+  });
+
+  it("does not look for duplicates while something else needs fixing", async () => {
+    await receiveProposal(form({ placeType: "volcan" }));
+    await receiveProposal(form({ municipality: "palmira" }));
+    vi.mocked(locateInMunicipality).mockResolvedValue(null);
+    await receiveProposal(form());
+    expect(findPossibleDuplicates).not.toHaveBeenCalled();
   });
 });
 
