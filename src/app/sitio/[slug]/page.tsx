@@ -9,6 +9,7 @@ import { MunicipalityAgencies } from "@/components/municipality-agencies";
 import { OtherPlaces } from "@/components/other-places";
 import { MapLegend } from "@/components/map-legend";
 import { placeMetaDescription } from "@/components/meta-description";
+import { placeJsonLd, serializeJsonLd } from "@/components/place-json-ld";
 import { PhotoGallery } from "@/components/photo-gallery";
 import { coordinatesText, placeFacts } from "@/components/place-facts";
 import { PlaceLocationMap } from "@/components/place-location-map";
@@ -67,6 +68,11 @@ async function PlaceContent({ params }: { params: PageProps<"/sitio/[slug]">["pa
 
   return (
     <article className="space-y-6">
+      {/* HU-73: what the page says, for search engines. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(placeJsonLd(place)) }}
+      />
       <BackToResults municipality={place.municipality} />
 
       <header className="space-y-2">

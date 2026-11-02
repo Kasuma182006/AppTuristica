@@ -127,6 +127,8 @@ canónica y Open Graph completo, porque Next reemplaza el `openGraph` del layout
 Sitemap (HU-72): `src/app/sitemap.ts` lee la base en cada petición (`connection()`), así sigue a cada ingesta. Lista inicio, `/api-docs`,
 municipios con sitios (solo su primera página) y todas las fichas publicadas (frágiles incluidas), con `lastmod` solo en fichas. Las páginas nuevas
 indexables se agregan a `STATIC_PATHS` (`src/lib/sitemap.ts`). `robots.ts` bloquea solo `/api/`: no bloquear páginas con noindex, Google dejaría de leerlo.
+Datos estructurados (HU-73): JSON-LD `TouristAttraction` en cada ficha (`src/components/place-json-ld.ts`); los frágiles van sin `geo`, `image` ni `sameAs`.
+Siempre con `serializeJsonLd`: escapa `<` para que un texto de la comunidad no cierre el `<script>`. Google no da resultados enriquecidos con este tipo: se valida en validator.schema.org.
 
 ## Fuera del MVP
 Cuentas, favoritos, reseñas, búsqueda por texto o semántica, filtros por distancia, filtro "Ideal para",
