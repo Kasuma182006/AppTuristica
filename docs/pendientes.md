@@ -4,6 +4,7 @@ Preguntar al dueño del proyecto antes de implementar la historia afectada. Al d
 - [ ] Meta mínima de sitios publicados para lanzar (HU-100)
 - [ ] Propuestas permitidas por IP al día (HU-82)
 - [ ] Correo para solicitudes de retiro (HU-91)
+- [ ] Sitios de la comunidad en áreas protegidas: solo son frágiles si quien propone marca la casilla (HU-77), porque los polígonos de OSM no se guardan en la base. Un sitio sin marcar se publica con punto exacto y la ingesta no lo corrige. Opción si se vuelve un problema: guardar los polígonos en una tabla, llenada por la ingesta, y marcar frágil al guardar
 - [ ] Si el cron de ingesta falla seguido por Overpass: historia para pasar a Geofabrik + osmium (ver README)
 
 ## Supuestos ya tomados

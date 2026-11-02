@@ -19,6 +19,7 @@ const valid = {
   longitude: "-76.53201",
   description: "Pozo de agua fría rodeado de bosque, a media hora de la vereda.",
   cost: "gratis",
+  fragile: false,
 };
 
 const errorsFor = (changes: object) => {
@@ -47,6 +48,11 @@ describe("validateProposalForm", () => {
     expect(result.success && result.values.cost).toBe(saved);
   });
 
+  it("keeps whether the site was marked as fragile", () => {
+    const result = validateProposalForm({ ...valid, fragile: true });
+    expect(result.success && result.values.fragile).toBe(true);
+  });
+
   it("rejects a cost that is not an option", () => {
     expect(errorsFor({ cost: "barato" }).cost).toBe("Elige una opción de costo de entrada.");
   });
@@ -61,6 +67,7 @@ describe("validateProposalForm", () => {
       longitude: "",
       description: "",
       cost: "",
+      fragile: false,
     };
     expect(validateProposalForm(empty)).toEqual({
       success: false,
@@ -166,6 +173,7 @@ describe("proposalFormValues", () => {
     data.set("longitude", "-76.5");
     data.set("description", "Pozo de agua fría.");
     data.set("cost", "pago");
+    data.set("fragile", "on");
 
     expect(proposalFormValues(data)).toEqual({
       placeName: "Charco",
@@ -176,6 +184,7 @@ describe("proposalFormValues", () => {
       longitude: "-76.5",
       description: "Pozo de agua fría.",
       cost: "pago",
+      fragile: true,
     });
   });
 
@@ -189,6 +198,7 @@ describe("proposalFormValues", () => {
       longitude: "",
       description: "",
       cost: "",
+      fragile: false,
     });
   });
 });

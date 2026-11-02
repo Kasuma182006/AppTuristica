@@ -84,6 +84,8 @@ export const proposalFormSchema = z.object({
   cost: z
     .enum(["gratis", "pago", ""], "Elige una opción de costo de entrada.")
     .transform((value): CostSlug | null => value || null),
+  // Marked: the exact point is never shown (HU-77, CLAUDE.md).
+  fragile: z.boolean(),
 });
 
 export type ProposalFormValues = z.infer<typeof proposalFormSchema>;
@@ -103,6 +105,7 @@ export const PROPOSAL_FIELDS = [
   "longitude",
   "description",
   "cost",
+  "fragile",
 ] as const satisfies readonly ProposalField[];
 
 /** Reads the form as sent by the browser; a field that is missing counts as empty. */
@@ -120,6 +123,8 @@ export function proposalFormValues(data: FormData): Record<ProposalField, unknow
     longitude: text("longitude"),
     description: text("description"),
     cost: text("cost"),
+    // A checkbox is only sent when it is marked.
+    fragile: data.has("fragile"),
   };
 }
 

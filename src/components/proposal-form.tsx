@@ -218,6 +218,24 @@ export function ProposalForm({
         <FieldError field="cost" message={errors.cost} />
       </fieldset>
 
+      <div className="space-y-1">
+        <label className="flex min-h-11 items-center gap-3 font-medium">
+          <input
+            type="checkbox"
+            name="fragile"
+            aria-describedby="propuesta-fragile-hint"
+            onChange={() => setChecked(false)}
+            className="size-5 shrink-0 accent-primary"
+          />
+          Es un sitio frágil
+        </label>
+        <p id="propuesta-fragile-hint" className="text-sm text-muted">
+          Marca esta casilla si el lugar se daña con facilidad o está en un área protegida. No
+          mostraremos su punto exacto a nadie: se verá un área de unos 2 km, y &quot;Cómo
+          llegar&quot; solo llevará al municipio.
+        </p>
+      </div>
+
       <div className="space-y-3">
         <button
           type="submit"
