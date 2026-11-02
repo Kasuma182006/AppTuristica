@@ -16,6 +16,7 @@ import {
   countPlacesByMunicipality,
   countPlacesByOrigin,
   countPlacesByPlaceType,
+  countPlacesByTypeInMunicipality,
   countRestrictedPlaces,
   findOtherPlacesInMunicipality,
   findPlaceBySlug,
@@ -261,4 +262,11 @@ export async function getOtherPlaces(
     findOtherPlacesInMunicipality(db, place.municipality.slug, place.slug, OTHER_PLACES_SHOWN),
   ]);
   return { total, places };
+}
+
+/** Published sites of a municipality per place type, most common first (HU-71). */
+export async function getMunicipalityPlaceTypes(
+  municipalitySlug: string,
+): Promise<{ slug: string; name: string; total: number }[]> {
+  return countPlacesByTypeInMunicipality(getDb(), municipalitySlug);
 }

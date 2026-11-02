@@ -121,6 +121,9 @@ que su estado HTTP queda en 200 aunque llamen `notFound()`. Para el 404 real (HU
 y reescribe los sitios o municipios inexistentes (o sitios ocultos) a `/sitio-no-encontrado` (estática, 404); un
 `/lugar/{slug}` de sitio (dirección vieja) redirige con 308 a `/sitio/{slug}`, y si el slug es también de un municipio
 gana el municipio. `export const instant = false` no sirve para el 404: solo apaga validaciones.
+Metadatos (HU-71): cada página con contenido usa `pageMetadata` (`src/lib/page-metadata.ts`: título, descripción,
+canónica y Open Graph completo, porque Next reemplaza el `openGraph` del layout entero). Imágenes OG generadas con
+`next/og` (`src/components/og-card.tsx`, sin fotos), en `opengraph-image.tsx` de cada ruta.
 
 ## Fuera del MVP
 Cuentas, favoritos, reseñas, búsqueda por texto o semántica, filtros por distancia, filtro "Ideal para",

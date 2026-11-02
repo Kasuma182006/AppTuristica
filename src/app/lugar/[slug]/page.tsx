@@ -6,17 +6,19 @@ import { cache, Suspense } from "react";
 import { EXPLORE_PATH } from "@/components/filter-url";
 import { RememberSearch } from "@/components/last-search";
 import { LoadError } from "@/components/load-error";
+import { municipalityMetaDescription } from "@/components/meta-description";
 import { placeCountLabel } from "@/components/municipality-search";
 import { PaginationBar } from "@/components/pagination-bar";
 import { PlaceCard } from "@/components/place-card";
 import { ResultsSkeleton } from "@/components/results-skeleton";
 import { ResultsLink, ResultsRegion, ResultsTransition } from "@/components/results-transition";
 import { PAGE_DATA_DEADLINE_MS, withDeadline } from "@/lib/deadline";
+import { pageMetadata } from "@/lib/page-metadata";
 import { municipalityPath } from "@/lib/routes";
 import { toUrlSearchParams } from "@/lib/search-params";
 import { getMunicipality } from "@/modules/catalogs/service";
 import { parsePlaceQuery } from "@/modules/places/filters";
-import { searchPlaces } from "@/modules/places/service";
+import { getMunicipalityPlaceTypes, searchPlaces } from "@/modules/places/service";
 import { PAGE_SIZE } from "@/modules/places/types";
 
 /** One query per request, shared by the metadata and the page. */
@@ -24,17 +26,29 @@ const loadMunicipality = cache((slug: string) =>
   withDeadline(getMunicipality(slug), PAGE_DATA_DEADLINE_MS, "el municipio"),
 );
 
-export async function generateMetadata({ params }: PageProps<"/lugar/[slug]">): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+  searchParams,
+}: PageProps<"/lugar/[slug]">): Promise<Metadata> {
   const { slug } = await params;
-  let municipality;
+  let municipality, types;
   try {
-    municipality = await loadMunicipality(slug);
+    [municipality, types] = await Promise.all([
+      loadMunicipality(slug),
+      withDeadline(getMunicipalityPlaceTypes(slug), PAGE_DATA_DEADLINE_MS, "el municipio"),
+    ]);
   } catch {
     // The page shows the error and "Reintentar"; the title can stay generic.
     return {};
   }
   if (!municipality) notFound();
-  return { title: `Sitios turísticos en ${municipality.name}` };
+  // Each page of the list is its own page for search engines; a broken number points to page 1.
+  const page = pageOf(toUrlSearchParams(await searchParams)) ?? 1;
+  return pageMetadata({
+    title: `Sitios turísticos en ${municipality.name}`,
+    description: municipalityMetaDescription(municipality, types),
+    path: municipalityPath(slug, page),
+  });
 }
 
 const buttonClass = "inline-flex h-11 items-center justify-center rounded-md px-5 font-medium";

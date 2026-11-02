@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { SITE_NAME } from "@/lib/page-metadata";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,12 +16,27 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const HOME_TITLE = "Buscador turístico del Valle del Cauca";
+const HOME_DESCRIPTION =
+  "Encuentra cascadas, senderos, miradores y ríos poco conocidos del Valle del Cauca.";
+
 export const metadata: Metadata = {
+  // Absolute addresses for canonical links and Open Graph images, also on preview deployments.
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "Buscador turístico del Valle del Cauca",
-    template: "%s · Buscador turístico",
+    default: HOME_TITLE,
+    template: `%s · ${SITE_NAME}`,
   },
-  description: "Encuentra cascadas, senderos, miradores y ríos poco conocidos del Valle del Cauca.",
+  description: HOME_DESCRIPTION,
+  // For pages without their own (HU-71): each page with content sends its own, see pageMetadata.
+  openGraph: {
+    title: HOME_TITLE,
+    description: HOME_DESCRIPTION,
+    siteName: SITE_NAME,
+    locale: "es_CO",
+    type: "website",
+  },
+  twitter: { card: "summary_large_image" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

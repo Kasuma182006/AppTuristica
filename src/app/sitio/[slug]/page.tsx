@@ -8,6 +8,7 @@ import { LoadError } from "@/components/load-error";
 import { MunicipalityAgencies } from "@/components/municipality-agencies";
 import { OtherPlaces } from "@/components/other-places";
 import { MapLegend } from "@/components/map-legend";
+import { placeMetaDescription } from "@/components/meta-description";
 import { PhotoGallery } from "@/components/photo-gallery";
 import { coordinatesText, placeFacts } from "@/components/place-facts";
 import { PlaceLocationMap } from "@/components/place-location-map";
@@ -18,6 +19,8 @@ import { ShareButtons } from "@/components/share-buttons";
 import { placeWarnings } from "@/components/place-warnings";
 import { VisitNotices } from "@/components/visit-notices";
 import { PAGE_DATA_DEADLINE_MS, withDeadline } from "@/lib/deadline";
+import { pageMetadata } from "@/lib/page-metadata";
+import { placePath } from "@/lib/routes";
 import { getPlace } from "@/modules/places/service";
 
 /** One query per request, shared by the metadata and the page. */
@@ -35,10 +38,11 @@ export async function generateMetadata({ params }: PageProps<"/sitio/[slug]">): 
     return {};
   }
   if (!place) notFound();
-  return {
+  return pageMetadata({
     title: `${place.name}, ${place.municipality.name}`,
-    description: place.description ?? undefined,
-  };
+    description: placeMetaDescription(place),
+    path: placePath(place.slug),
+  });
 }
 
 /**

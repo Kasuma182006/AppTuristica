@@ -10,6 +10,7 @@ import {
   countPlacesByMunicipality,
   countPlacesByOrigin,
   countPlacesByPlaceType,
+  countPlacesByTypeInMunicipality,
   countRestrictedPlaces,
   findOtherPlacesInMunicipality,
   findPlaceBySlug,
@@ -187,6 +188,18 @@ describe("hidden sites are not counted (HU-40, HU-44)", () => {
 
     expect(queries).toHaveLength(1);
     expect(queries[0]?.sql).toMatch(/^select "place_types"\."slug", count\(\*\) from "places"/);
+    expect(queries.every(requiresPublished)).toBe(true);
+  });
+
+  it("the site count per place type in a municipality (HU-71)", async () => {
+    const queries = await sentQueries((db) => countPlacesByTypeInMunicipality(db, "cali"));
+
+    expect(queries).toHaveLength(1);
+    expect(queries[0]?.sql).toMatch(
+      /^select "place_types"\."slug", "place_types"\."name", count\(\*\)/,
+    );
+    expect(queries[0]?.sql).toMatch(/"municipalities"\."slug" = \$\d+/);
+    expect(queries[0]?.params).toContain("cali");
     expect(queries.every(requiresPublished)).toBe(true);
   });
 
