@@ -1,5 +1,11 @@
 import { getDb } from "@/lib/db";
-import { APPROX_RADIUS_M, approximateLocation, roundCoordinate } from "@/lib/geo";
+import {
+  APPROX_RADIUS_M,
+  approximateLocation,
+  distanceM,
+  DUPLICATE_DISTANCE_M,
+  roundCoordinate,
+} from "@/lib/geo";
 import { SLUG_PATTERN } from "@/lib/slug";
 import { getCatalogs } from "@/modules/catalogs/service";
 import type { CatalogItem } from "@/modules/catalogs/types";
@@ -24,13 +30,16 @@ import {
   publishedPlaceExists,
   findPlacePoints,
   findPlaces,
+  findPlacesNear,
   findSitemapPlaces,
+  type NearbyPlaceRow,
   type PhotoRow,
   type PlaceDetailRow,
   type PlaceRow,
   type PlaceSummaryRow,
   type PlacePointRow,
 } from "./repository";
+import { similarPlaceNames } from "./place-names";
 import type { SitemapData } from "@/lib/sitemap";
 import {
   COST_SLUGS,
@@ -57,6 +66,7 @@ import {
   type PlacePoint,
   type PlaceQuery,
   type PlaceSummary,
+  type RelatedPlace,
 } from "./types";
 
 const slugByDifficulty = new Map(
@@ -264,6 +274,43 @@ export async function getOtherPlaces(
     findOtherPlacesInMunicipality(db, place.municipality.slug, place.slug, OTHER_PLACES_SHOWN),
   ]);
   return { total, places };
+}
+
+/**
+ * How far around a point to look for duplicates, in degrees (~4.4 km). It reaches every fragile site
+ * that may match: the area's 2 km plus the ~1.6 km the exact point may be from the area's center.
+ */
+const NEARBY_DEGREES = 0.04;
+
+/**
+ * Which sites near a point may be the one being proposed (HU-81), nearest first: a similar name
+ * closer than 200 m. A fragile site is compared only through its public location, within its
+ * 2 km area: comparing its real point would let anyone find it by trying coordinates.
+ */
+export function possibleDuplicates(
+  rows: readonly NearbyPlaceRow[],
+  point: { lat: number; lon: number },
+  name: string,
+): Pick<RelatedPlace, "slug" | "name">[] {
+  return rows
+    .filter((row) => similarPlaceNames(row.name, name))
+    .map((row) => {
+      const { lat, lng, approximate } = toPublicLocation(row);
+      const distance = distanceM(point, { lat, lon: lng });
+      const limit = approximate ? APPROX_RADIUS_M : DUPLICATE_DISTANCE_M;
+      return { slug: row.slug, name: row.name, distance, near: distance < limit };
+    })
+    .filter((place) => place.near)
+    .sort((a, b) => a.distance - b.distance)
+    .map(({ slug, name: placeName }) => ({ slug, name: placeName }));
+}
+
+/** The published sites that may be the one being proposed (HU-81). */
+export async function findPossibleDuplicates(
+  point: { lat: number; lon: number },
+  name: string,
+): Promise<Pick<RelatedPlace, "slug" | "name">[]> {
+  return possibleDuplicates(await findPlacesNear(getDb(), point, NEARBY_DEGREES), point, name);
 }
 
 /** What the sitemap lists (HU-72): published sites and the municipalities that have any. */

@@ -4,11 +4,12 @@ import { useRef, useState, useTransition, type FormEvent } from "react";
 import { flushSync } from "react-dom";
 import { submitProposal } from "@/app/proponer/actions";
 import type { Bounds, Catalogs } from "@/modules/catalogs/types";
-import { TERMS_PATH } from "@/lib/routes";
-import { COST_LABELS } from "@/modules/places/types";
+import { placePath, TERMS_PATH } from "@/lib/routes";
+import { COST_LABELS, type RelatedPlace } from "@/modules/places/types";
 import {
   DESCRIPTION_MAX_LENGTH,
   DESCRIPTION_MIN_LENGTH,
+  NOT_DUPLICATE_FIELD,
   PROPOSAL_FIELDS,
   proposalFormValues,
   validateProposalForm,
@@ -58,17 +59,27 @@ export function ProposalForm({
   const [municipality, setMunicipality] = useState("");
   const [sendError, setSendError] = useState<string | null>(null);
   const [sending, startSending] = useTransition();
+  const [duplicates, setDuplicates] = useState<Pick<RelatedPlace, "slug" | "name">[]>([]);
+  const formRef = useRef<HTMLFormElement>(null);
+  const duplicatesRef = useRef<HTMLHeadingElement>(null);
+  const submitRef = useRef<HTMLButtonElement>(null);
   const turnstileRef = useRef<ProposalTurnstileHandle>(null);
 
-  const clearError = (field: ProposalField) => {
+  /** A change makes the last answer old: the next send checks again. */
+  const clearResult = () => {
     setChecked(false);
+    setDuplicates([]);
+  };
+
+  const clearError = (field: ProposalField) => {
+    clearResult();
     setErrors((current) => ({ ...current, [field]: undefined }));
   };
 
   /** The error goes with the field, so the first one is focused only once it is on the page. */
   const showErrors = (form: HTMLFormElement, found: ProposalErrors) => {
     flushSync(() => {
-      setChecked(false);
+      clearResult();
       setErrors(found);
     });
     const first = PROPOSAL_FIELDS.find((field) => found[field]);
@@ -77,19 +88,10 @@ export function ProposalForm({
     if (target instanceof HTMLElement) target.focus();
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (sending) return;
-    const form = event.currentTarget;
-    const data = new FormData(form);
-    const result = validateProposalForm(proposalFormValues(data));
+  const send = (form: HTMLFormElement, data: FormData) => {
     setSendError(null);
-    if (!result.success) {
-      showErrors(form, result.errors);
-      return;
-    }
     setErrors({});
-    setChecked(false);
+    clearResult();
     startSending(async () => {
       try {
         const sent = await submitProposal(data);
@@ -99,6 +101,10 @@ export function ProposalForm({
           if (sent.suggestedMunicipality) setMunicipality(sent.suggestedMunicipality);
           showErrors(form, sent.errors);
         }
+        if (sent.status === "duplicate") {
+          flushSync(() => setDuplicates(sent.duplicates));
+          duplicatesRef.current?.focus();
+        }
       } catch {
         setSendError(NOT_SENT);
       }
@@ -107,8 +113,40 @@ export function ProposalForm({
     });
   };
 
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (sending) return;
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const result = validateProposalForm(proposalFormValues(data));
+    if (result.success) {
+      send(form, data);
+    } else {
+      setSendError(null);
+      showErrors(form, result.errors);
+    }
+  };
+
+  /** The visitor checked the sites offered and it is none of them (HU-81). */
+  const sendAnyway = () => {
+    const form = formRef.current;
+    if (sending || !form) return;
+    const data = new FormData(form);
+    data.set(NOT_DUPLICATE_FIELD, "on");
+    // This button goes away with the offer: the focus must not go back to the top of the page.
+    flushSync(() => setDuplicates([]));
+    submitRef.current?.focus();
+    send(form, data);
+  };
+
   return (
-    <form noValidate autoComplete="off" onSubmit={handleSubmit} className="max-w-xl space-y-6">
+    <form
+      ref={formRef}
+      noValidate
+      autoComplete="off"
+      onSubmit={handleSubmit}
+      className="max-w-xl space-y-6"
+    >
       <p className="text-sm text-muted">Los campos con * son obligatorios.</p>
 
       <div className="space-y-1">
@@ -158,7 +196,7 @@ export function ProposalForm({
                   type="checkbox"
                   name="activities"
                   value={activity.slug}
-                  onChange={() => setChecked(false)}
+                  onChange={clearResult}
                   className="size-5 shrink-0 accent-primary"
                 />
                 {activity.name}
@@ -258,7 +296,7 @@ export function ProposalForm({
             type="checkbox"
             name="fragile"
             aria-describedby="propuesta-fragile-hint"
-            onChange={() => setChecked(false)}
+            onChange={clearResult}
             className="size-5 shrink-0 accent-primary"
           />
           Es un sitio frágil
@@ -303,15 +341,59 @@ export function ProposalForm({
       <ProposalTurnstile ref={turnstileRef} />
 
       <div className="space-y-3">
-        <button
-          type="submit"
-          aria-disabled={sending || undefined}
-          className={`inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-6 font-medium text-on-primary ${
-            sending ? "cursor-wait opacity-70" : ""
-          }`}
-        >
-          {sending ? "Enviando…" : "Enviar propuesta"}
-        </button>
+        {duplicates.length > 0 ? (
+          <section
+            aria-labelledby="propuesta-duplicados"
+            className="space-y-3 rounded-xl border border-accent bg-surface p-4"
+          >
+            <h2
+              id="propuesta-duplicados"
+              ref={duplicatesRef}
+              tabIndex={-1}
+              className="text-lg font-semibold"
+            >
+              {duplicates.length === 1 ? "¿Es este lugar?" : "¿Es alguno de estos lugares?"}
+            </h2>
+            <p>Ya tenemos un sitio con un nombre parecido cerca del punto que marcaste.</p>
+            <ul className="space-y-1">
+              {duplicates.map((place) => (
+                <li key={place.slug}>
+                  {/* In another tab, so what was written in the form is not lost. */}
+                  <a
+                    href={placePath(place.slug)}
+                    target="_blank"
+                    rel="noopener"
+                    className="inline-flex min-h-11 items-center font-medium text-primary underline underline-offset-4"
+                  >
+                    {place.name}
+                    <span className="sr-only"> (se abre en otra pestaña)</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              onClick={sendAnyway}
+              aria-disabled={sending || undefined}
+              className={`inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-6 font-medium text-on-primary ${
+                sending ? "cursor-wait opacity-70" : ""
+              }`}
+            >
+              {sending ? "Enviando…" : "No es este, enviar de todas formas"}
+            </button>
+          </section>
+        ) : (
+          <button
+            ref={submitRef}
+            type="submit"
+            aria-disabled={sending || undefined}
+            className={`inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-6 font-medium text-on-primary ${
+              sending ? "cursor-wait opacity-70" : ""
+            }`}
+          >
+            {sending ? "Enviando…" : "Enviar propuesta"}
+          </button>
+        )}
         {/* On the page from the start, so screen readers announce the message when it appears. */}
         <p role="status" className="font-medium">
           {checked

@@ -1,8 +1,10 @@
 import { PAGE_DATA_DEADLINE_MS, withDeadline } from "@/lib/deadline";
 import { TURNSTILE_TOKEN_FIELD, verifyTurnstile } from "@/lib/turnstile";
 import { getCatalogs, locateInMunicipality } from "@/modules/catalogs/service";
+import { findPossibleDuplicates } from "@/modules/places/service";
 import type { Catalogs } from "@/modules/catalogs/types";
 import {
+  NOT_DUPLICATE_FIELD,
   proposalFormValues,
   validateProposalForm,
   type ProposalErrors,
@@ -30,9 +32,13 @@ export function catalogErrors(
 /**
  * What only the database can answer (HU-80): that the lists have the chosen values, and where the
  * point is. The municipality is the one the point falls in, whatever was chosen, so a different
- * choice comes back corrected for the visitor to review.
+ * choice comes back corrected for the visitor to review. With everything in order, it looks for
+ * the same site already published (HU-81), unless the visitor said it is none of those.
  */
-async function checkAgainstDatabase(values: ProposalFormValues): Promise<ProposalResult> {
+async function checkAgainstDatabase(
+  values: ProposalFormValues,
+  notDuplicate: boolean,
+): Promise<ProposalResult> {
   const [catalogs, located] = await Promise.all([
     getCatalogs(),
     locateInMunicipality({ lat: values.latitude, lon: values.longitude }),
@@ -44,7 +50,13 @@ async function checkAgainstDatabase(values: ProposalFormValues): Promise<Proposa
     errors.municipality = `El punto queda en ${located.name}: cambiamos el municipio. Revísalo y envía de nuevo.`;
     return { status: "invalid", errors, suggestedMunicipality: located.slug };
   }
-  return Object.keys(errors).length > 0 ? { status: "invalid", errors } : { status: "received" };
+  if (!located || Object.keys(errors).length > 0) return { status: "invalid", errors };
+
+  if (!notDuplicate) {
+    const duplicates = await findPossibleDuplicates(located.point, values.placeName);
+    if (duplicates.length > 0) return { status: "duplicate", duplicates };
+  }
+  return { status: "received" };
 }
 
 /**
@@ -60,7 +72,7 @@ export async function receiveProposal(data: FormData): Promise<ProposalResult> {
   const validation = validateProposalForm(proposalFormValues(data));
   if (!validation.success) return { status: "invalid", errors: validation.errors };
   return withDeadline(
-    checkAgainstDatabase(validation.values),
+    checkAgainstDatabase(validation.values, data.has(NOT_DUPLICATE_FIELD)),
     PAGE_DATA_DEADLINE_MS,
     "la propuesta",
   );

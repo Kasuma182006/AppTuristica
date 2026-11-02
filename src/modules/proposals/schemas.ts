@@ -1,6 +1,9 @@
 import { z } from "zod";
 import type { CostSlug } from "@/modules/places/types";
 
+/** Sent when the visitor says the proposal is none of the sites offered as duplicates (HU-81). */
+export const NOT_DUPLICATE_FIELD = "notDuplicate";
+
 export const PLACE_NAME_MIN_LENGTH = 3;
 export const PLACE_NAME_MAX_LENGTH = 100;
 export const DESCRIPTION_MIN_LENGTH = 20;

@@ -293,6 +293,31 @@ export async function publishedPlaceExists(db: Db, slug: string): Promise<boolea
   return rows.length > 0;
 }
 
+/** A published site near a point, as stored: approximate a fragile one before comparing it. */
+export type NearbyPlaceRow = Pick<PlaceRow, "slug" | "name" | "sensitivity" | "location">;
+
+/** Published sites within some degrees of a point (HU-81), using the spatial index. */
+export async function findPlacesNear(
+  db: Db,
+  { lat, lon }: { lat: number; lon: number },
+  degrees: number,
+): Promise<NearbyPlaceRow[]> {
+  return db
+    .select({
+      slug: places.slug,
+      name: places.name,
+      sensitivity: places.sensitivity,
+      location: places.location,
+    })
+    .from(places)
+    .where(
+      and(
+        isPublished,
+        sql`ST_DWithin(${places.location}, ST_SetSRID(ST_MakePoint(${lon}::float8, ${lat}::float8), 4326), ${degrees}::float8)`,
+      ),
+    );
+}
+
 /** The address and last change of every published site, for the sitemap (HU-72). */
 export async function findSitemapPlaces(db: Db): Promise<{ slug: string; updatedAt: Date }[]> {
   return db
