@@ -16,6 +16,7 @@ import {
   type ProposalErrors,
   type ProposalField,
 } from "@/modules/proposals/schemas";
+import type { PublishedPlace } from "@/modules/proposals/types";
 import {
   borderClass,
   errorId,
@@ -24,6 +25,7 @@ import {
   FieldLabel,
   fieldId,
 } from "./proposal-field";
+import { ProposalConfirmation } from "./proposal-confirmation";
 import { ProposalLocationField } from "./proposal-location-field";
 import { ProposalTurnstile, type ProposalTurnstileHandle } from "./proposal-turnstile";
 
@@ -43,18 +45,17 @@ interface Props extends Pick<Catalogs, "placeTypes" | "activities" | "municipali
 }
 
 /**
- * The proposal form (HU-74, RF-19), with what is needed to describe a site. Nothing is saved yet:
- * that arrives with HU-80 and HU-83, so for now sending only runs the checks. What is written
- * stays in the form when sending fails.
+ * The fields of the proposal form (HU-74 to HU-82, RF-19). What is written stays in the form when
+ * sending fails.
  */
-export function ProposalForm({
+function ProposalFields({
   placeTypes,
   activities,
   municipalities,
   municipalityBounds,
-}: Props) {
+  onPublished,
+}: Props & { onPublished: (place: PublishedPlace) => void }) {
   const [errors, setErrors] = useState<ProposalErrors>({});
-  const [checked, setChecked] = useState(false);
   const [description, setDescription] = useState("");
   const [municipality, setMunicipality] = useState("");
   const [sendError, setSendError] = useState<string | null>(null);
@@ -66,10 +67,7 @@ export function ProposalForm({
   const turnstileRef = useRef<ProposalTurnstileHandle>(null);
 
   /** A change makes the last answer old: the next send checks again. */
-  const clearResult = () => {
-    setChecked(false);
-    setDuplicates([]);
-  };
+  const clearResult = () => setDuplicates([]);
 
   const clearError = (field: ProposalField) => {
     clearResult();
@@ -95,7 +93,7 @@ export function ProposalForm({
     startSending(async () => {
       try {
         const sent = await submitProposal(data);
-        if (sent.status === "received") setChecked(true);
+        if (sent.status === "published") onPublished(sent);
         if (sent.status === "not-verified") setSendError(NOT_VERIFIED);
         if (sent.status === "limited") setSendError(sent.message);
         if (sent.status === "invalid") {
@@ -397,9 +395,6 @@ export function ProposalForm({
         )}
         {/* On the page from the start, so screen readers announce the message when it appears. */}
         <p role="status" className="font-medium">
-          {checked
-            ? "Los datos están completos, pero aún no recibimos propuestas: no se guardó nada."
-            : null}
           {sendError ? (
             <>
               <span aria-hidden="true">⚠︎ </span>
@@ -409,5 +404,15 @@ export function ProposalForm({
         </p>
       </div>
     </form>
+  );
+}
+
+/** Proposing a site: the form, and once it is published, the confirmation (HU-83, RF-21). */
+export function ProposalForm(props: Props) {
+  const [published, setPublished] = useState<PublishedPlace | null>(null);
+  return published ? (
+    <ProposalConfirmation place={published} onProposeAnother={() => setPublished(null)} />
+  ) : (
+    <ProposalFields {...props} onPublished={setPublished} />
   );
 }

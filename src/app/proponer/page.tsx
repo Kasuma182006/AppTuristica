@@ -4,13 +4,15 @@ import { Suspense } from "react";
 import { LoadError } from "@/components/load-error";
 import { ProposalForm } from "@/components/proposal-form";
 import { PAGE_DATA_DEADLINE_MS, withDeadline } from "@/lib/deadline";
+import { pageMetadata } from "@/lib/page-metadata";
 import { getCatalogs, getMunicipalityBounds } from "@/modules/catalogs/service";
 
-// Not indexed while it cannot receive proposals (until HU-83).
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Proponer lugar",
-  robots: { index: false, follow: false },
-};
+  description:
+    "Comparte un sitio turístico poco conocido del Valle del Cauca para que otros lo descubran. Sin cuentas: se publica de inmediato.",
+  path: "/proponer",
+});
 
 /** The form with the catalogs and the area of each municipality, read at request time. */
 async function ProposalFormWithCatalogs() {
@@ -49,7 +51,7 @@ function ProposalFormSkeleton() {
   );
 }
 
-/** Where to propose a site (HU-74, RF-19). */
+/** Where to propose a site (HU-74 to HU-83, RF-19 to RF-21). */
 export default function ProposePlacePage() {
   return (
     <div className="space-y-6">
@@ -59,12 +61,6 @@ export default function ProposePlacePage() {
           Comparte un sitio poco conocido del Valle del Cauca para que otros lo descubran.
         </p>
       </header>
-
-      {/* Until HU-83: nobody should fill in the form believing it will be published. */}
-      <p className="max-w-xl rounded-xl border border-border bg-surface p-4 font-medium">
-        Todavía no recibimos propuestas. Puedes ver el formulario, pero lo que escribas no se
-        guardará.
-      </p>
 
       <LoadError what="el formulario">
         <Suspense fallback={<ProposalFormSkeleton />}>

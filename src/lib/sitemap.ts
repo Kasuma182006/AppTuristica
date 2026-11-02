@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 import { municipalityPath, placePath } from "./routes";
 import { SITE_URL } from "./site";
 
-/** Pages without data behind them. /explorar and /proponer are noindex, so they stay out. */
-const STATIC_PATHS = ["/", "/api-docs"];
+/** Pages without data behind them. /explorar is noindex, so it stays out. */
+const STATIC_PATHS = ["/", "/api-docs", "/proponer"];
 
 export interface SitemapData {
   /** Published sites only; a hidden site must never reach the sitemap. */

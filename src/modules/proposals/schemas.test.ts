@@ -102,6 +102,13 @@ describe("validateProposalForm", () => {
     });
   });
 
+  it("requires letters or numbers in the name, since its address comes from them", () => {
+    expect(errorsFor({ placeName: "!!!" }).placeName).toBe(
+      "El nombre debe tener letras o números.",
+    );
+    expect(errorsFor({ placeName: "Ñandú" })).toEqual({});
+  });
+
   it("does not count the spaces around a text", () => {
     expect(errorsFor({ placeName: "  ab  " }).placeName).toMatch(/al menos 3/);
     const result = validateProposalForm({ ...valid, placeName: "  Charco  " });

@@ -15,12 +15,12 @@ import type { Bounds, CatalogItem, Catalogs, Municipality } from "./types";
  */
 export async function locateInMunicipality(
   point: Location["point"],
-): Promise<(CatalogItem & Pick<Location, "point">) | null> {
+): Promise<(CatalogItem & Location) | null> {
   const db = getDb();
   const [location] = await locatePoints(db, [point]);
   if (!location) return null;
   const municipality = await findMunicipalityById(db, location.municipalityId);
-  return municipality ? { ...municipality, point: location.point } : null;
+  return municipality ? { ...municipality, ...location } : null;
 }
 
 /** The area of each municipality, by slug, to move a map there (HU-75). */

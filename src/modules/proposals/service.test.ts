@@ -5,13 +5,15 @@ import { TURNSTILE_TOKEN_FIELD } from "@/lib/turnstile";
 import { getCatalogs, locateInMunicipality } from "@/modules/catalogs/service";
 import { findPossibleDuplicates } from "@/modules/places/service";
 import { NOT_DUPLICATE_FIELD } from "./schemas";
-import { catalogErrors, limitMessage, receiveProposal } from "./service";
+import { saveCommunityPlace } from "./repository";
+import { catalogErrors, limitMessage, receiveProposal, toNewCommunityPlace } from "./service";
 
 vi.mock("@/modules/catalogs/service", () => ({
   getCatalogs: vi.fn(),
   locateInMunicipality: vi.fn(),
 }));
 
+vi.mock("./repository", () => ({ saveCommunityPlace: vi.fn() }));
 vi.mock("next/server", () => ({ after: vi.fn() }));
 vi.mock("@/lib/db", () => ({ getDb: () => ({}) }));
 vi.mock("@/lib/rate-limit", async (original) => ({
@@ -37,7 +39,19 @@ const catalogs = {
   ],
 };
 
-const inCali = { slug: "cali", name: "Cali", point: { lat: 3.45, lon: -76.53 } };
+const inCali = {
+  slug: "cali",
+  name: "Cali",
+  municipalityId: 7,
+  point: { lat: 3.45, lon: -76.53 },
+};
+
+const published = {
+  status: "published",
+  slug: "charco-del-burro-cali",
+  name: "Charco del Burro",
+  fragile: false,
+};
 
 const validFields: Record<string, string> = {
   [TURNSTILE_TOKEN_FIELD]: "token",
@@ -71,6 +85,7 @@ beforeEach(() => {
   vi.mocked(getCatalogs).mockResolvedValue(catalogs);
   vi.mocked(locateInMunicipality).mockResolvedValue(inCali);
   vi.mocked(findPossibleDuplicates).mockResolvedValue([]);
+  vi.mocked(saveCommunityPlace).mockResolvedValue("charco-del-burro-cali");
   vi.mocked(consumeRateLimit).mockResolvedValue({
     allowed: true,
     retryAfterS: 60,
@@ -85,8 +100,8 @@ afterEach(() => {
 });
 
 describe("receiveProposal: Turnstile (HU-79)", () => {
-  it("receives a valid proposal with a token Cloudflare accepts", async () => {
-    await expect(receive(form())).resolves.toEqual({ status: "received" });
+  it("publishes a valid proposal with a token Cloudflare accepts", async () => {
+    await expect(receive(form())).resolves.toEqual(published);
   });
 
   it("rejects a token Cloudflare rejects, before touching the database", async () => {
@@ -196,9 +211,7 @@ describe("receiveProposal: duplicates (HU-81)", () => {
 
   it("continues when the visitor says it is none of them", async () => {
     vi.mocked(findPossibleDuplicates).mockResolvedValue([burro]);
-    await expect(receive(form({ [NOT_DUPLICATE_FIELD]: "on" }))).resolves.toEqual({
-      status: "received",
-    });
+    await expect(receive(form({ [NOT_DUPLICATE_FIELD]: "on" }))).resolves.toEqual(published);
     expect(findPossibleDuplicates).not.toHaveBeenCalled();
   });
 
@@ -213,7 +226,7 @@ describe("receiveProposal: duplicates (HU-81)", () => {
 
 describe("receiveProposal: limit per IP (HU-82)", () => {
   it("counts an accepted proposal, with the hash of the IP and never the IP", async () => {
-    await expect(receive(form())).resolves.toEqual({ status: "received" });
+    await expect(receive(form())).resolves.toEqual(published);
     const [, ipHash, rule] = vi.mocked(consumeRateLimit).mock.calls[0] ?? [];
     expect(ipHash).toBe(hashIp("203.0.113.7", SECRET));
     expect(ipHash).not.toContain("203.0.113.7");
@@ -256,6 +269,82 @@ describe("receiveProposal: limit per IP (HU-82)", () => {
     await expect(receive(form())).rejects.toThrow("database down");
     vi.stubEnv("IP_HASH_SECRET", "");
     await expect(receive(form())).rejects.toThrow(/IP_HASH_SECRET/);
+  });
+});
+
+describe("receiveProposal: publication (HU-83)", () => {
+  it("saves nothing when something fails before", async () => {
+    cloudflareAnswers(false);
+    await receive(form());
+    cloudflareAnswers(true);
+    await receive(form({ placeName: "" }));
+    await receive(form({ placeType: "volcan" }));
+    await receive(form({ municipality: "palmira" }));
+    vi.mocked(findPossibleDuplicates).mockResolvedValueOnce([{ slug: "a", name: "A" }]);
+    await receive(form());
+    vi.mocked(consumeRateLimit).mockResolvedValueOnce({
+      allowed: false,
+      retryAfterS: 60,
+      newWindow: false,
+    });
+    await receive(form());
+    vi.mocked(locateInMunicipality).mockResolvedValue(null);
+    await receive(form());
+    expect(saveCommunityPlace).not.toHaveBeenCalled();
+  });
+
+  it("says whether the published site is fragile", async () => {
+    await expect(receive(form({ fragile: "on" }))).resolves.toEqual({
+      ...published,
+      fragile: true,
+    });
+  });
+
+  it("fails when saving fails, so the visitor can try again", async () => {
+    vi.mocked(saveCommunityPlace).mockRejectedValue(new Error("database down"));
+    await expect(receive(form())).rejects.toThrow("database down");
+  });
+});
+
+describe("toNewCommunityPlace", () => {
+  const values = {
+    placeName: "Charco del Burro",
+    placeType: "rio",
+    activities: ["camping"],
+    municipality: "cali",
+    latitude: 3.45,
+    longitude: -76.53,
+    description: "Pozo de agua fría rodeado de bosque.",
+    cost: null,
+    fragile: false,
+    acceptedTerms: true as const,
+  };
+  const located = { slug: "cali", municipalityId: 7, point: { lat: 3.4501, lon: -76.5301 } };
+
+  it("uses the located municipality and point, not what was written", () => {
+    expect(toNewCommunityPlace(values, located)).toEqual({
+      name: "Charco del Burro",
+      placeTypeSlug: "rio",
+      activitySlugs: ["camping"],
+      municipalitySlug: "cali",
+      municipalityId: 7,
+      location: { lat: 3.4501, lng: -76.5301 },
+      description: "Pozo de agua fría rodeado de bosque.",
+      cost: null,
+      sensitivity: "normal",
+      confidence: 30,
+    });
+  });
+
+  it("marks a site as fragile when the visitor did", () => {
+    expect(toNewCommunityPlace({ ...values, fragile: true }, located).sensitivity).toBe("fragile");
+  });
+
+  it("saves the cost in the database's values, and it adds confidence (docs/confianza.md)", () => {
+    const free = toNewCommunityPlace({ ...values, cost: "gratis" }, located);
+    expect(free.cost).toBe("free");
+    expect(free.confidence).toBe(40);
+    expect(toNewCommunityPlace({ ...values, cost: "pago" }, located).cost).toBe("paid");
   });
 });
 

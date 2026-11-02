@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { slugify } from "@/lib/slug";
 import type { CostSlug } from "@/modules/places/types";
 
 /** Sent when the visitor says the proposal is none of the sites offered as duplicates (HU-81). */
@@ -57,7 +58,9 @@ export const proposalFormSchema = z.object({
       PLACE_NAME_MIN_LENGTH,
       `El nombre debe tener al menos ${PLACE_NAME_MIN_LENGTH} caracteres.`,
     )
-    .max(PLACE_NAME_MAX_LENGTH, `El nombre puede tener hasta ${PLACE_NAME_MAX_LENGTH} caracteres.`),
+    .max(PLACE_NAME_MAX_LENGTH, `El nombre puede tener hasta ${PLACE_NAME_MAX_LENGTH} caracteres.`)
+    // The site's address comes from its name (HU-83).
+    .refine((name) => slugify(name) !== "", "El nombre debe tener letras o números."),
   placeType: z.string().min(1, "Elige el tipo de sitio."),
   activities: z
     .array(z.string("Elige las actividades de la lista."))
