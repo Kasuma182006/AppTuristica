@@ -14,6 +14,7 @@ import {
   findOtherPlacesInMunicipality,
   findPlaceBySlug,
   findPlaces,
+  publishedPlaceExists,
 } from "./repository";
 import type { PlaceFilters, PlaceQuery } from "./types";
 
@@ -128,6 +129,14 @@ describe("hidden sites never appear (HU-40)", () => {
 
   it("the site page", async () => {
     const queries = await sentQueries((db) => findPlaceBySlug(db, "rio-cali"));
+
+    expect(queries).toHaveLength(1);
+    expect(queries[0]?.params).toContain("rio-cali");
+    expect(queries.every(requiresPublished)).toBe(true);
+  });
+
+  it("the existence check behind the 404 status (HU-69)", async () => {
+    const queries = await sentQueries((db) => publishedPlaceExists(db, "rio-cali"));
 
     expect(queries).toHaveLength(1);
     expect(queries[0]?.params).toContain("rio-cali");

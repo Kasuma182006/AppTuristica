@@ -20,6 +20,7 @@ import {
   findOtherPlacesInMunicipality,
   findPlaceBySlug,
   countPlaces,
+  publishedPlaceExists,
   findPlacePoints,
   findPlaces,
   type PhotoRow,
@@ -199,6 +200,12 @@ export function toPlaceDetail(row: PlaceDetailRow): PlaceDetail {
     })),
     updatedAt: new Date(row.sources.length > 0 ? lastSeen : row.updatedAt.getTime()).toISOString(),
   };
+}
+
+/** Whether a site page exists, without loading it (HU-69: proxy.ts answers 404 otherwise). */
+export async function placeExists(slug: string): Promise<boolean> {
+  if (!SLUG_PATTERN.test(slug)) return false;
+  return publishedPlaceExists(getDb(), slug);
 }
 
 /** A published site by slug (HU-38); undefined when it does not exist or is hidden. */
