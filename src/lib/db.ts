@@ -16,7 +16,8 @@ const clientOptions: ClientOptions = {
   // Never queue a query behind another on a busy connection: through the transaction pooler
   // those connections stop answering, and from then on every page hangs until the
   // statement_timeout (HU-51: six simultaneous requests were enough). Extra queries wait for a
-  // free connection instead.
+  // free connection instead. It also means db.transaction fails here (UNSAFE_TRANSACTION): for
+  // several writes that must go together, use a single statement (HU-83).
   max_pipeline: 0,
 };
 

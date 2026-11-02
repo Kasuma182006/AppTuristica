@@ -10,10 +10,11 @@ describe("sitemapEntries", () => {
   });
   const urls = entries.map((entry) => entry.url);
 
-  it("lists the home, the API docs, municipalities and sites with absolute addresses", () => {
+  it("lists the home, the API docs, the proposal form, municipalities and sites with absolute addresses", () => {
     expect(urls).toEqual([
       `${SITE_URL}/`,
       `${SITE_URL}/api-docs`,
+      `${SITE_URL}/proponer`,
       `${SITE_URL}/lugar/cali`,
       `${SITE_URL}/sitio/embalse-de-calima`,
     ]);
@@ -27,12 +28,12 @@ describe("sitemapEntries", () => {
   });
 
   it("leaves noindex and error pages out", () => {
-    for (const path of ["/explorar", "/proponer", "/estilos", "/sitio-no-encontrado", "/api/"]) {
+    for (const path of ["/explorar", "/terminos", "/estilos", "/sitio-no-encontrado", "/api/"]) {
       expect(urls.some((url) => url.startsWith(`${SITE_URL}${path}`))).toBe(false);
     }
   });
 
   it("still lists the fixed pages with no data", () => {
-    expect(sitemapEntries({ places: [], municipalitySlugs: [] })).toHaveLength(2);
+    expect(sitemapEntries({ places: [], municipalitySlugs: [] })).toHaveLength(3);
   });
 });
