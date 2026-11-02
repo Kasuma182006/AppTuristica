@@ -13,6 +13,8 @@ import { coordinatesText, placeFacts } from "@/components/place-facts";
 import { PlaceLocationMap } from "@/components/place-location-map";
 import { PlaceTransparency } from "@/components/place-transparency";
 import { PlaceTypeImage } from "@/components/place-type-image";
+import { shareDataFor } from "@/components/share";
+import { ShareButtons } from "@/components/share-buttons";
 import { placeWarnings } from "@/components/place-warnings";
 import { VisitNotices } from "@/components/visit-notices";
 import { PAGE_DATA_DEADLINE_MS, withDeadline } from "@/lib/deadline";
@@ -44,7 +46,7 @@ export async function generateMetadata({ params }: PageProps<"/lugar/[slug]">): 
  * HU-63 (RF-13): warnings before going;
  * HU-61 and HU-62 (RF-12): where it is and how to get there; HU-64 (RF-14): fixed notices;
  * HU-66 (RF-16): agencies of the municipality; HU-65 (RF-15): sources, confidence and date;
- * HU-67 (RF-17): other sites of the municipality.
+ * HU-67 (RF-17): other sites of the municipality; HU-68 (RF-18): sharing.
  */
 async function PlaceContent({ params }: { params: PageProps<"/lugar/[slug]">["params"] }) {
   await connection();
@@ -98,6 +100,8 @@ async function PlaceContent({ params }: { params: PageProps<"/lugar/[slug]">["pa
           </div>
         ) : null}
       </header>
+
+      <ShareButtons data={shareDataFor(place)} />
 
       {place.photos.length > 0 ? (
         <PhotoGallery
