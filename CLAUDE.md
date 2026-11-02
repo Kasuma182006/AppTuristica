@@ -130,6 +130,7 @@ indexables se agregan a `STATIC_PATHS` (`src/lib/sitemap.ts`). `robots.ts` bloqu
 Datos estructurados (HU-73): JSON-LD `TouristAttraction` en cada ficha (`src/components/place-json-ld.ts`); los frágiles van sin `geo`, `image` ni `sameAs`.
 Siempre con `serializeJsonLd`: escapa `<` para que un texto de la comunidad no cierre el `<script>`. Google no da resultados enriquecidos con este tipo: se valida en validator.schema.org.
 Propuestas (HU-74): formulario en `/proponer` (`src/components/proposal-form.tsx`), validado con el esquema zod de `src/modules/proposals/schemas.ts`, que también usará el servidor (HU-80).
+Ubicación (HU-75): `location-picker-canvas.tsx` (marcador) y latitud/longitud editables, que son lo que envía el formulario. Worker y WebGL de MapLibre en `map-setup.ts`, compartido por todos los mapas. Al elegir municipio, el mapa encuadra su mayor porción de tierra (`findMunicipalityBounds`): Buenaventura incluye Malpelo.
 Hasta HU-83 no guarda nada: el aviso de la página, el mensaje del botón y el noindex se quitan en esa historia.
 
 ## Fuera del MVP

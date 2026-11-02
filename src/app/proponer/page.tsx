@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { LoadError } from "@/components/load-error";
 import { ProposalForm } from "@/components/proposal-form";
 import { PAGE_DATA_DEADLINE_MS, withDeadline } from "@/lib/deadline";
-import { getCatalogs } from "@/modules/catalogs/service";
+import { getCatalogs, getMunicipalityBounds } from "@/modules/catalogs/service";
 
 // Not indexed while it cannot receive proposals (until HU-83).
 export const metadata: Metadata = {
@@ -12,16 +12,21 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-/** The form with the types, activities and municipalities, read at request time. */
+/** The form with the catalogs and the area of each municipality, read at request time. */
 async function ProposalFormWithCatalogs() {
   await connection();
-  const { placeTypes, activities, municipalities } = await withDeadline(
-    getCatalogs(),
+  const [{ placeTypes, activities, municipalities }, municipalityBounds] = await withDeadline(
+    Promise.all([getCatalogs(), getMunicipalityBounds()]),
     PAGE_DATA_DEADLINE_MS,
     "el formulario",
   );
   return (
-    <ProposalForm placeTypes={placeTypes} activities={activities} municipalities={municipalities} />
+    <ProposalForm
+      placeTypes={placeTypes}
+      activities={activities}
+      municipalities={municipalities}
+      municipalityBounds={municipalityBounds}
+    />
   );
 }
 
@@ -37,6 +42,7 @@ function ProposalFormSkeleton() {
         <div className="h-11 animate-pulse rounded-md bg-surface" />
         <div className="h-32 animate-pulse rounded-md bg-surface" />
         <div className="h-11 animate-pulse rounded-md bg-surface" />
+        <div className="h-80 animate-pulse rounded-xl bg-surface sm:h-96" />
         <div className="h-32 animate-pulse rounded-md bg-surface" />
       </div>
     </>

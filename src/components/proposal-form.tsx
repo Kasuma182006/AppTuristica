@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { flushSync } from "react-dom";
-import type { Catalogs } from "@/modules/catalogs/types";
+import type { Bounds, Catalogs } from "@/modules/catalogs/types";
 import {
   DESCRIPTION_MAX_LENGTH,
   DESCRIPTION_MIN_LENGTH,
@@ -12,30 +12,19 @@ import {
   type ProposalErrors,
   type ProposalField,
 } from "@/modules/proposals/schemas";
+import {
+  borderClass,
+  errorId,
+  FieldError,
+  fieldClass,
+  FieldLabel,
+  fieldId,
+} from "./proposal-field";
+import { ProposalLocationField } from "./proposal-location-field";
 
-const fieldClass = "w-full rounded-md border bg-bg px-3 text-base text-fg";
-
-/** A field with a problem also says so in words below it: color is never the only sign. */
-const borderClass = (error: string | undefined) => (error ? "border-accent" : "border-border");
-
-const errorId = (field: ProposalField) => `propuesta-${field}-error`;
-
-function FieldLabel({ field, children }: { field: ProposalField; children: string }) {
-  return (
-    <label htmlFor={`propuesta-${field}`} className="block font-medium">
-      {children} <span aria-hidden="true">*</span>
-    </label>
-  );
-}
-
-function FieldError({ field, message }: { field: ProposalField; message: string | undefined }) {
-  if (!message) return null;
-  return (
-    <p id={errorId(field)} className="text-sm font-medium text-fg">
-      <span aria-hidden="true">⚠︎ </span>
-      {message}
-    </p>
-  );
+interface Props extends Pick<Catalogs, "placeTypes" | "activities" | "municipalities"> {
+  /** The area of each municipality, by slug, to move the map there. */
+  municipalityBounds: Record<string, Bounds>;
 }
 
 /**
@@ -46,10 +35,12 @@ export function ProposalForm({
   placeTypes,
   activities,
   municipalities,
-}: Pick<Catalogs, "placeTypes" | "activities" | "municipalities">) {
+  municipalityBounds,
+}: Props) {
   const [errors, setErrors] = useState<ProposalErrors>({});
   const [checked, setChecked] = useState(false);
   const [description, setDescription] = useState("");
+  const [municipality, setMunicipality] = useState("");
 
   const clearError = (field: ProposalField) => {
     setChecked(false);
@@ -82,7 +73,7 @@ export function ProposalForm({
       <div className="space-y-1">
         <FieldLabel field="placeName">Nombre del sitio</FieldLabel>
         <input
-          id="propuesta-placeName"
+          id={fieldId("placeName")}
           name="placeName"
           type="text"
           required
@@ -97,7 +88,7 @@ export function ProposalForm({
       <div className="space-y-1">
         <FieldLabel field="placeType">Tipo de sitio</FieldLabel>
         <select
-          id="propuesta-placeType"
+          id={fieldId("placeType")}
           name="placeType"
           required
           defaultValue=""
@@ -139,24 +130,33 @@ export function ProposalForm({
       <div className="space-y-1">
         <FieldLabel field="municipality">Municipio</FieldLabel>
         <select
-          id="propuesta-municipality"
+          id={fieldId("municipality")}
           name="municipality"
           required
-          defaultValue=""
+          value={municipality}
           aria-invalid={errors.municipality ? true : undefined}
           aria-describedby={errors.municipality ? errorId("municipality") : undefined}
-          onChange={() => clearError("municipality")}
+          onChange={(event) => {
+            setMunicipality(event.target.value);
+            clearError("municipality");
+          }}
           className={`${fieldClass} h-11 ${borderClass(errors.municipality)}`}
         >
           <option value="">Elige un municipio</option>
-          {municipalities.map((municipality) => (
-            <option key={municipality.slug} value={municipality.slug}>
-              {municipality.name}
+          {municipalities.map((option) => (
+            <option key={option.slug} value={option.slug}>
+              {option.name}
             </option>
           ))}
         </select>
         <FieldError field="municipality" message={errors.municipality} />
       </div>
+
+      <ProposalLocationField
+        errors={errors}
+        clearError={clearError}
+        frame={municipalityBounds[municipality] ?? null}
+      />
 
       <div className="space-y-1">
         <FieldLabel field="description">Descripción</FieldLabel>
@@ -164,7 +164,7 @@ export function ProposalForm({
           Cuenta qué es y cómo es el lugar, con tus palabras. No copies textos de otras páginas.
         </p>
         <textarea
-          id="propuesta-description"
+          id={fieldId("description")}
           name="description"
           rows={5}
           required

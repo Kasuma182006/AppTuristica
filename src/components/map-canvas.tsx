@@ -1,13 +1,6 @@
 "use client";
 
-import "maplibre-gl/dist/maplibre-gl.css";
-import {
-  AttributionControl,
-  Map as MapLibreMap,
-  NavigationControl,
-  Popup,
-  setWorkerUrl,
-} from "maplibre-gl";
+import { AttributionControl, Map as MapLibreMap, NavigationControl, Popup } from "maplibre-gl";
 import type { GeoJSONSource, MapLayerMouseEvent } from "maplibre-gl";
 import { useEffect, useRef, useState } from "react";
 import { placePath } from "@/lib/routes";
@@ -22,10 +15,7 @@ import {
   toFeatureCollection,
   type MapPointProperties,
 } from "./map-data";
-
-// MapLibre 6 looks for its worker next to its own file, which the bundle does not keep: this
-// makes Next.js publish the worker as a static file and tells MapLibre where it is.
-setWorkerUrl(new URL("maplibre-gl/dist/maplibre-gl-worker.mjs", import.meta.url).href);
+import { canDrawMaps } from "./map-setup";
 
 const SOURCE_ID = "places";
 const POINTS_LAYER = "places-points";
@@ -33,16 +23,6 @@ const AREAS_LAYER = "places-areas";
 // The light map style keeps its colors in dark mode too: the light theme's primary and accent.
 const POINT_COLOR = "#1f6f4a";
 const AREA_COLOR = "#c9772b";
-
-/** MapLibre draws with WebGL; old devices or disabled graphics cannot show the map. */
-function canDrawMaps(): boolean {
-  try {
-    const canvas = document.createElement("canvas");
-    return Boolean(canvas.getContext("webgl2") ?? canvas.getContext("webgl"));
-  } catch {
-    return false;
-  }
-}
 
 /** The summary of the sites under a click (HU-58), built as DOM so names are never HTML. */
 function summary(sites: MapPointProperties[], more: number): HTMLElement {
