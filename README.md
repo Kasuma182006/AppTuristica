@@ -70,6 +70,22 @@ tipos, pruebas, build y `npm audit --omit=dev`. Las alertas que solo afectan dep
 desarrollo (por ejemplo `braces`, vía `eslint-config-next`) están aceptadas mientras no exista
 versión corregida.
 
+## Sitios ocultos
+
+Tres reportes de IP distintas ocultan un sitio sin intervención (HU-86) y nada avisa. No hay panel: se
+revisan y se reactivan con SQL en Supabase.
+
+```sql
+-- Sitios ocultos y sus reportes (los reportes se borran a los 180 días).
+SELECT p.slug, p.name, r.reason, r.comment, r.created_at
+FROM places p LEFT JOIN reports r ON r.place_id = p.id
+WHERE p.status = 'hidden' ORDER BY p.slug, r.created_at;
+
+-- Reactivar uno. Primero los reportes: si quedan, el siguiente lo vuelve a ocultar.
+DELETE FROM reports WHERE place_id = (SELECT id FROM places WHERE slug = 'el-slug');
+UPDATE places SET status = 'published' WHERE slug = 'el-slug';
+```
+
 ## Ingesta programada
 
 El mismo workflow, en su último paso, borra los reportes de más de 180 días (`npm run purge-reports`, HU-85).

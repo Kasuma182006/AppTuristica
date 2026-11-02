@@ -11,7 +11,8 @@ export const reportReasonEnum = pgEnum("report_reason", [
   "dangerous",
 ]);
 
-// Error reports from visitors (HU-18). Three reports hide a site (RF-23, HU-86).
+// Error reports from visitors (HU-18). Three reports hide a site (RF-23, HU-86): the trigger of
+// migration 0017 does it.
 export const reports = pgTable(
   "reports",
   {
