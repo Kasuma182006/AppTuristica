@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { PlaceSummary } from "@/modules/places/types";
 import { CardPhoto } from "./card-photo";
 import { displayAuthor } from "./commons-photo";
+import { ConfidenceDots } from "./confidence-dots";
 import { confidenceLevel } from "./confidence-level";
 import { PlaceTypeImage } from "./place-type-image";
 
@@ -51,16 +52,7 @@ export function PlaceCard({ place }: { place: PlaceSummary }) {
           </p>
         ) : null}
         <p className="mt-auto flex items-center gap-2 pt-2 text-sm text-muted">
-          <span aria-hidden="true" className="flex gap-1">
-            {[1, 2, 3].map((dot) => (
-              <span
-                key={dot}
-                className={`size-2 rounded-full border border-primary ${
-                  dot <= confidence.dots ? "bg-primary" : ""
-                }`}
-              />
-            ))}
-          </span>
+          <ConfidenceDots dots={confidence.dots} />
           {confidence.label}
           <span className="sr-only"> (confianza {place.confidence} de 100)</span>
         </p>
