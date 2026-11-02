@@ -1,7 +1,27 @@
 import { getDb } from "@/lib/db";
 import { SLUG_PATTERN } from "@/lib/slug";
-import { findCatalogs, findMunicipalityBounds, findMunicipalityBySlug } from "./repository";
-import type { Bounds, Catalogs, Municipality } from "./types";
+import { locatePoints, type Location } from "./locate";
+import {
+  findCatalogs,
+  findMunicipalityBounds,
+  findMunicipalityById,
+  findMunicipalityBySlug,
+} from "./repository";
+import type { Bounds, CatalogItem, Catalogs, Municipality } from "./types";
+
+/**
+ * The municipality a point falls in, with the point itself, moved inside when it was just off the
+ * border (HU-80). Null when the point is outside every municipality.
+ */
+export async function locateInMunicipality(
+  point: Location["point"],
+): Promise<(CatalogItem & Pick<Location, "point">) | null> {
+  const db = getDb();
+  const [location] = await locatePoints(db, [point]);
+  if (!location) return null;
+  const municipality = await findMunicipalityById(db, location.municipalityId);
+  return municipality ? { ...municipality, point: location.point } : null;
+}
 
 /** The area of each municipality, by slug, to move a map there (HU-75). */
 export function getMunicipalityBounds(): Promise<Record<string, Bounds>> {

@@ -1,7 +1,7 @@
 import { asc, eq, sql } from "drizzle-orm";
 import { activities, departments, municipalities, placeTypes } from "@db/schema";
 import type { Db } from "@/lib/db";
-import type { Bounds, Catalogs, Municipality } from "./types";
+import type { Bounds, CatalogItem, Catalogs, Municipality } from "./types";
 
 /**
  * The area of each municipality's largest piece of land, by slug (HU-75). Buenaventura also owns
@@ -47,6 +47,16 @@ export async function findCatalogs(db: Db): Promise<Catalogs> {
     placeTypes: placeTypeRows,
     activities: activityRows,
   };
+}
+
+/** A municipality's slug and name by its id (HU-80); undefined when there is none. */
+export async function findMunicipalityById(db: Db, id: number): Promise<CatalogItem | undefined> {
+  const [row] = await db
+    .select({ slug: municipalities.slug, name: municipalities.name })
+    .from(municipalities)
+    .where(eq(municipalities.id, id))
+    .limit(1);
+  return row;
 }
 
 /** A municipality by slug, with its department (HU-70); undefined when there is none. */

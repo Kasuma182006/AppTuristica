@@ -36,6 +36,11 @@ describe("validateProposalForm", () => {
     });
   });
 
+  it("keeps each activity once", () => {
+    const result = validateProposalForm({ ...valid, activities: ["camping", "camping"] });
+    expect(result.success && result.values.activities).toEqual(["camping"]);
+  });
+
   it("leaves activities optional", () => {
     expect(validateProposalForm({ ...valid, activities: [] }).success).toBe(true);
   });
