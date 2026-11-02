@@ -5,6 +5,9 @@ export const REPORT_PLACE_FIELD = "place";
 
 export const COMMENT_MAX_LENGTH = 500;
 
+/** How long a report is kept, with the hash of its IP (RNF-05). */
+export const REPORT_RETENTION_DAYS = 180;
+
 /** The reasons offered (RF-22), with the values of the database's report_reason. */
 export const REPORT_REASONS = [
   { value: "not_exists", label: "No existe" },

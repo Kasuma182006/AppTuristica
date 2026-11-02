@@ -21,7 +21,8 @@ export const reports = pgTable(
       .references(() => places.id, { onDelete: "cascade" }),
     reason: reportReasonEnum("reason").notNull(),
     comment: text("comment"),
-    // Keyed hash of the reporter's IP (HMAC-SHA256, hex), never the IP itself (RNF-05).
+    // Keyed hash of the reporter's IP (HMAC-SHA256, hex), never the IP itself (RNF-05). It goes
+    // away with the report, after REPORT_RETENTION_DAYS (src/modules/reports/schemas.ts).
     ipHash: text("ip_hash").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },

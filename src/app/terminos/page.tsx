@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DATA_LICENSE } from "@/lib/openapi";
 import { pageMetadata } from "@/lib/page-metadata";
 import { TERMS_PATH } from "@/lib/routes";
+import { REPORT_RETENTION_DAYS } from "@/modules/reports/schemas";
 
 // A short first version, so what the proposal form asks to accept exists (HU-78). HU-88 completes
 // it, and then it is indexed and added to the sitemap.
@@ -57,7 +58,8 @@ export default function TermsPage() {
           No pedimos cuenta, nombre ni correo, así que no incluyas datos personales en tus aportes
           ni en tus reportes de errores. Para frenar el spam guardamos tu IP solo en forma cifrada,
           y los formularios usan Cloudflare Turnstile, un servicio externo que comprueba que quien
-          envía es una persona.
+          envía es una persona. Los reportes de errores, con su IP cifrada, se borran pasados{" "}
+          {REPORT_RETENTION_DAYS} días.
         </p>
       </section>
 
