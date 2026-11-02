@@ -5,6 +5,7 @@ import { cache, Suspense } from "react";
 import { directionsFor } from "@/components/directions";
 import { BackToResults } from "@/components/last-search";
 import { LoadError } from "@/components/load-error";
+import { MunicipalityAgencies } from "@/components/municipality-agencies";
 import { MapLegend } from "@/components/map-legend";
 import { PhotoGallery } from "@/components/photo-gallery";
 import { coordinatesText, placeFacts } from "@/components/place-facts";
@@ -41,7 +42,7 @@ export async function generateMetadata({ params }: PageProps<"/lugar/[slug]">): 
  * HU-59 (RF-10): what the site is and what can be done there; HU-60 (RF-11): its photos;
  * HU-63 (RF-13): warnings before going;
  * HU-61 and HU-62 (RF-12): where it is and how to get there; HU-64 (RF-14): fixed notices;
- * HU-65 (RF-15): sources, confidence and date.
+ * HU-66 (RF-16): agencies of the municipality; HU-65 (RF-15): sources, confidence and date.
  */
 async function PlaceContent({ params }: { params: PageProps<"/lugar/[slug]">["params"] }) {
   await connection();
@@ -229,6 +230,13 @@ async function PlaceContent({ params }: { params: PageProps<"/lugar/[slug]">["pa
       </section>
 
       <VisitNotices municipality={place.municipality.name} />
+
+      {/* Its own query: the rest of the page does not wait for it, nor fail with it. */}
+      <LoadError what="las agencias">
+        <Suspense fallback={null}>
+          <MunicipalityAgencies municipality={place.municipality} />
+        </Suspense>
+      </LoadError>
 
       <PlaceTransparency place={place} />
     </article>
