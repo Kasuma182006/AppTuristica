@@ -97,6 +97,7 @@ export function ProposalForm({
         const sent = await submitProposal(data);
         if (sent.status === "received") setChecked(true);
         if (sent.status === "not-verified") setSendError(NOT_VERIFIED);
+        if (sent.status === "limited") setSendError(sent.message);
         if (sent.status === "invalid") {
           if (sent.suggestedMunicipality) setMunicipality(sent.suggestedMunicipality);
           showErrors(form, sent.errors);

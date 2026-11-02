@@ -4,6 +4,7 @@ import * as schema from "@db/schema";
 import type { Db } from "@/lib/db";
 import {
   API_RATE_LIMIT,
+  PROPOSAL_RATE_LIMIT,
   consumeRateLimit,
   deleteExpiredRateLimits,
   rateLimitResult,
@@ -11,6 +12,16 @@ import {
 } from "./rate-limit";
 
 const rule = { scope: "api", limit: 60, windowMs: 60_000 };
+
+describe("PROPOSAL_RATE_LIMIT", () => {
+  it("allows 5 proposals per day, then says when the day ends", () => {
+    const now = new Date("2026-11-02T21:00:00.000Z");
+    expect(rateLimitResult(5, now, PROPOSAL_RATE_LIMIT).allowed).toBe(true);
+    const over = rateLimitResult(6, now, PROPOSAL_RATE_LIMIT);
+    expect(over.allowed).toBe(false);
+    expect(over.retryAfterS).toBe(3 * 60 * 60);
+  });
+});
 
 describe("windowStart", () => {
   it("aligns to the start of the minute", () => {

@@ -14,5 +14,7 @@ export type ProposalResult =
     }
   /** Nothing was saved: sites that may be the same, for the visitor to check (HU-81). */
   | { status: "duplicate"; duplicates: Pick<RelatedPlace, "slug" | "name">[] }
+  /** Nothing was saved: this IP used up its proposals for the day (HU-82). */
+  | { status: "limited"; message: string }
   /** It passed the checks. Nothing is saved until HU-83. */
   | { status: "received" };
