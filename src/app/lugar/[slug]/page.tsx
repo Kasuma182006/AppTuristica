@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { cache, Suspense } from "react";
+import { directionsFor } from "@/components/directions";
 import { BackToResults } from "@/components/last-search";
 import { LoadError } from "@/components/load-error";
 import { MapLegend } from "@/components/map-legend";
@@ -35,7 +36,7 @@ export async function generateMetadata({ params }: PageProps<"/lugar/[slug]">): 
 
 /**
  * HU-59 (RF-10): what the site is and what can be done there; HU-60 (RF-11): its photos;
- * HU-61 (RF-12): where it is.
+ * HU-61 and HU-62 (RF-12): where it is and how to get there.
  */
 async function PlaceContent({ params }: { params: PageProps<"/lugar/[slug]">["params"] }) {
   await connection();
@@ -47,6 +48,7 @@ async function PlaceContent({ params }: { params: PageProps<"/lugar/[slug]">["pa
   const facts = placeFacts(place);
   const { location } = place;
   const coordinates = coordinatesText(location);
+  const directions = directionsFor(place);
 
   return (
     <article className="space-y-6">
@@ -158,6 +160,37 @@ async function PlaceContent({ params }: { params: PageProps<"/lugar/[slug]">["pa
             exacto.
           </p>
         )}
+        <div className="space-y-2 pt-2">
+          <a
+            href={directions.googleMaps}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-11 items-center justify-center gap-1 rounded-md bg-primary px-6 py-2 text-center font-medium text-on-primary"
+          >
+            {directions.municipalityOnly
+              ? `Cómo llegar a ${place.municipality.name}`
+              : "Cómo llegar"}{" "}
+            <span className="font-normal">(Google Maps)</span>
+            <span className="sr-only">, se abre en otra pestaña</span>
+          </a>
+          <p>
+            <a
+              href={directions.openStreetMap}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-11 items-center text-sm text-primary underline underline-offset-4"
+            >
+              o en OpenStreetMap
+              <span className="sr-only"> (se abre en otra pestaña)</span>
+            </a>
+          </p>
+          {directions.municipalityOnly ? (
+            <p className="text-sm text-muted">
+              Te lleva al casco urbano. Para proteger el sitio no publicamos su punto exacto:
+              pregunta en el municipio o a un operador local.
+            </p>
+          ) : null}
+        </div>
       </section>
     </article>
   );

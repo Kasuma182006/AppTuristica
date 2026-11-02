@@ -177,6 +177,7 @@ export function toPlaceDetail(row: PlaceDetailRow): PlaceDetail {
 
   return {
     ...toPublicFields(row),
+    department: row.department,
     description: row.description,
     wikidataDescription: row.wikidataDescription,
     // The article usually has the coordinates of a lake or a reserve (HU-59).

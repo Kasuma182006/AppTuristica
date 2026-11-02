@@ -32,6 +32,7 @@ const place: PlaceDetail = {
   location: { lat: 3.451234, lng: -76.532101, approximate: false, radiusM: null },
   description: "Río en Cali.",
   wikidataDescription: null,
+  department: "Valle del Cauca",
   wikipediaUrl: null,
   altitudeM: null,
   cost: null,

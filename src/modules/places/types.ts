@@ -176,6 +176,8 @@ export interface PlacePhoto {
 
 /** Everything the site page shows (HU-38, RF-10 to RF-15). */
 export interface PlaceDetail extends Omit<PlaceSummary, "restricted" | "photo"> {
+  /** The municipality's department, e.g. "Valle del Cauca". */
+  department: string;
   /** Generated from templates or written by the community. */
   description: string | null;
   /** Wikidata's short description (CC0): show it as Wikidata's, never as the site's. */

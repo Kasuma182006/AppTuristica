@@ -182,6 +182,7 @@ describe("searchPlaces", () => {
 describe("toPlaceDetail", () => {
   const detailRow: PlaceDetailRow = {
     ...row,
+    department: "Valle del Cauca",
     description: "Cascada en Dagua.",
     wikidataDescription: "cascada en Colombia",
     wikipediaUrl: "https://es.wikipedia.org/wiki/Salto_de_Bitaco",
@@ -225,6 +226,7 @@ describe("toPlaceDetail", () => {
       origin: "abiertas",
       confidence: 35,
       location: { lat: 3.612346, lng: -76.698765, approximate: false, radiusM: null },
+      department: "Valle del Cauca",
       description: "Cascada en Dagua.",
       wikidataDescription: "cascada en Colombia",
       wikipediaUrl: "https://es.wikipedia.org/wiki/Salto_de_Bitaco",
@@ -344,6 +346,7 @@ describe("fragile sites (HU-39)", () => {
   it("never includes the exact coordinates anywhere in the response", () => {
     const detail = toPlaceDetail({
       ...fragileRow,
+      department: "Valle del Cauca",
       description: null,
       wikidataDescription: null,
       wikipediaUrl: null,
@@ -362,6 +365,7 @@ describe("fragile sites (HU-39)", () => {
   it("drops the links to sources and photo pages, keeping the attribution", () => {
     const detail = toPlaceDetail({
       ...fragileRow,
+      department: "Valle del Cauca",
       description: null,
       wikidataDescription: "río de Colombia",
       wikipediaUrl: "https://es.wikipedia.org/wiki/R%C3%ADo_Cauca",
