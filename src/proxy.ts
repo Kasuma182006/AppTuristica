@@ -14,6 +14,10 @@ const NOT_FOUND_PATH = "/sitio-no-encontrado";
  * old site address is redirected. A municipality wins over a site with the same slug.
  */
 export async function proxy(request: NextRequest) {
+  // A report sent from a page opened before the site was hidden: the action itself answers that
+  // the site is gone, while a rewrite would look like a network error to the form.
+  if (request.headers.has("next-action")) return NextResponse.next();
+
   const { pathname, search } = request.nextUrl;
   const [, section = "", slug = ""] = pathname.split("/");
   try {
