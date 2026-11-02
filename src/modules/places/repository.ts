@@ -391,6 +391,28 @@ export async function countPlacesByPlaceType(db: Db): Promise<Map<string, number
   return new Map(rows.map((row) => [row.slug, row.total]));
 }
 
+/** A place type with its published sites in one municipality (HU-71). */
+export interface PlaceTypeCountRow {
+  slug: string;
+  name: string;
+  total: number;
+}
+
+/** Published sites of a municipality per place type, most common first (HU-71). */
+export async function countPlacesByTypeInMunicipality(
+  db: Db,
+  municipalitySlug: string,
+): Promise<PlaceTypeCountRow[]> {
+  return db
+    .select({ slug: placeTypes.slug, name: placeTypes.name, total: count() })
+    .from(places)
+    .innerJoin(placeTypes, eq(placeTypes.id, places.placeTypeId))
+    .innerJoin(municipalities, eq(municipalities.id, places.municipalityId))
+    .where(and(isPublished, eq(municipalities.slug, municipalitySlug)))
+    .groupBy(placeTypes.slug, placeTypes.name, placeTypes.sortOrder)
+    .orderBy(desc(count()), asc(placeTypes.sortOrder));
+}
+
 /** Published sites per activity slug (HU-46); activities without sites are absent. */
 export async function countPlacesByActivity(db: Db): Promise<Map<string, number>> {
   const rows = await db

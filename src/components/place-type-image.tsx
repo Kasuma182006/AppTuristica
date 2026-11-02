@@ -66,15 +66,23 @@ const ICONS: Record<string, ReactNode> = {
 /** Types shown in blue (water) instead of green (land). */
 const WATER_TYPES = new Set(["cascada", "rio", "lago", "balneario", "playa"]);
 
+/** Whether a place type is drawn in blue (water) instead of green (land). */
+export function isWaterType(slug: string): boolean {
+  return WATER_TYPES.has(slug);
+}
+
+/** The line drawing of a place type (24×24 paths); unknown types get the mountain. */
+export function placeTypeIcon(slug: string): ReactNode {
+  return ICONS[slug] ?? ICONS.cerro;
+}
+
 /**
  * The generic image of a place type, for sites without photos (RF-05, RF-11): the type's line
  * icon on a soft tint. Decorative: the type is always written next to it. Unknown types get the
  * mountain.
  */
 export function PlaceTypeImage({ slug, className = "" }: { slug: string; className?: string }) {
-  const tone = WATER_TYPES.has(slug)
-    ? "bg-secondary/10 text-secondary"
-    : "bg-primary/10 text-primary";
+  const tone = isWaterType(slug) ? "bg-secondary/10 text-secondary" : "bg-primary/10 text-primary";
   return (
     <div className={`flex items-center justify-center ${tone} ${className}`}>
       <svg
@@ -87,7 +95,7 @@ export function PlaceTypeImage({ slug, className = "" }: { slug: string; classNa
         aria-hidden="true"
         className="size-16"
       >
-        {ICONS[slug] ?? ICONS.cerro}
+        {placeTypeIcon(slug)}
       </svg>
     </div>
   );
