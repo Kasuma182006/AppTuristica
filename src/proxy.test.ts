@@ -1,6 +1,5 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getMunicipality } from "@/modules/catalogs/service";
 import { placeExists } from "@/modules/places/service";
 import { proxy } from "./proxy";
 

@@ -84,6 +84,12 @@ export function ReportForm({
   const [received, setReceived] = useState(false);
   const [sending, startSending] = useTransition();
   const turnstileRef = useRef<TurnstileHandle>(null);
+  const statusRef = useRef<HTMLParagraphElement>(null);
+
+  // It goes below the buttons: on a small screen it would stay out of the dialog's view.
+  useEffect(() => {
+    if (sendError) statusRef.current?.scrollIntoView({ block: "nearest" });
+  }, [sendError]);
 
   /** The error goes with the field, so the first one is focused only once it is on the page. */
   const showErrors = (form: HTMLFormElement, found: ReportErrors) => {
@@ -214,7 +220,7 @@ export function ReportForm({
           </button>
         </div>
         {/* On the page from the start, so screen readers announce the message when it appears. */}
-        <p role="status" className="font-medium">
+        <p ref={statusRef} role="status" className="font-medium">
           {sendError ? (
             <>
               <span aria-hidden="true">⚠︎ </span>
