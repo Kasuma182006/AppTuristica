@@ -24,12 +24,14 @@ import {
   publishedPlaceExists,
   findPlacePoints,
   findPlaces,
+  findSitemapPlaces,
   type PhotoRow,
   type PlaceDetailRow,
   type PlaceRow,
   type PlaceSummaryRow,
   type PlacePointRow,
 } from "./repository";
+import type { SitemapData } from "@/lib/sitemap";
 import {
   COST_SLUGS,
   DIFFICULTY_LABELS,
@@ -262,6 +264,16 @@ export async function getOtherPlaces(
     findOtherPlacesInMunicipality(db, place.municipality.slug, place.slug, OTHER_PLACES_SHOWN),
   ]);
   return { total, places };
+}
+
+/** What the sitemap lists (HU-72): published sites and the municipalities that have any. */
+export async function getSitemapData(): Promise<SitemapData> {
+  const db = getDb();
+  const [places, municipalityCounts] = await Promise.all([
+    findSitemapPlaces(db),
+    countPlacesByMunicipality(db),
+  ]);
+  return { places, municipalitySlugs: [...municipalityCounts.keys()].sort() };
 }
 
 /** Published sites of a municipality per place type, most common first (HU-71). */

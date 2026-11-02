@@ -124,6 +124,9 @@ gana el municipio. `export const instant = false` no sirve para el 404: solo apa
 Metadatos (HU-71): cada página con contenido usa `pageMetadata` (`src/lib/page-metadata.ts`: título, descripción,
 canónica y Open Graph completo, porque Next reemplaza el `openGraph` del layout entero). Imágenes OG generadas con
 `next/og` (`src/components/og-card.tsx`, sin fotos), en `opengraph-image.tsx` de cada ruta.
+Sitemap (HU-72): `src/app/sitemap.ts` lee la base en cada petición (`connection()`), así sigue a cada ingesta. Lista inicio, `/api-docs`,
+municipios con sitios (solo su primera página) y todas las fichas publicadas (frágiles incluidas), con `lastmod` solo en fichas. Las páginas nuevas
+indexables se agregan a `STATIC_PATHS` (`src/lib/sitemap.ts`). `robots.ts` bloquea solo `/api/`: no bloquear páginas con noindex, Google dejaría de leerlo.
 
 ## Fuera del MVP
 Cuentas, favoritos, reseñas, búsqueda por texto o semántica, filtros por distancia, filtro "Ideal para",

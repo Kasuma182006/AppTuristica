@@ -15,6 +15,7 @@ import {
   findOtherPlacesInMunicipality,
   findPlaceBySlug,
   findPlaces,
+  findSitemapPlaces,
   publishedPlaceExists,
 } from "./repository";
 import type { PlaceFilters, PlaceQuery } from "./types";
@@ -171,6 +172,16 @@ describe("sort orders (HU-37, HU-53)", () => {
     const orderBy = page?.sql.split(" order by ")[1]?.split(" limit ")[0];
 
     expect(orderBy).toMatch(expected);
+  });
+});
+
+describe("hidden sites stay out of the sitemap (HU-72)", () => {
+  it("the list of sites", async () => {
+    const queries = await sentQueries((db) => findSitemapPlaces(db));
+
+    expect(queries).toHaveLength(1);
+    expect(queries[0]?.sql).toMatch(/^select "slug", "updated_at" from "places"/);
+    expect(queries.every(requiresPublished)).toBe(true);
   });
 });
 
