@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { pageHref } from "./filter-url";
 import { pageItems, type PageItem } from "./pagination";
 import { ResultsLink } from "./results-transition";
 
@@ -8,21 +7,21 @@ const box = "inline-flex h-11 min-w-11 items-center justify-center rounded-md px
 interface Props {
   page: number;
   totalPages: number;
-  /** The current address, so every link keeps the filters and the order. */
-  params: URLSearchParams;
+  /** The address of a page: on /explorar it keeps the filters and the order. */
+  hrefFor: (page: number) => string;
 }
 
 /**
  * Numbered pagination (HU-54, RF-07): previous, numbers and next. Pages are plain links, so Back
  * returns to the previous page; small screens show only the current page between the ends.
  */
-export function PaginationBar({ page, totalPages, params }: Props) {
+export function PaginationBar({ page, totalPages, hrefFor }: Props) {
   if (totalPages <= 1) return null;
 
   const link = (target: number, children: ReactNode, label: string, rel?: string) => (
     // Not prefetched: each page renders the whole search, so it is only fetched when chosen.
     <ResultsLink
-      href={pageHref(params, target)}
+      href={hrefFor(target)}
       rel={rel}
       aria-label={label}
       aria-current={target === page && !rel ? "page" : undefined}

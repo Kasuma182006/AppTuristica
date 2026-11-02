@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { placePath } from "@/lib/routes";
 import type { PlaceSummary } from "@/modules/places/types";
 import { CardPhoto } from "./card-photo";
 import { displayAuthor } from "./commons-photo";
@@ -35,7 +36,7 @@ export function PlaceCard({ place }: { place: PlaceSummary }) {
         <h3 className="line-clamp-2 font-semibold">
           {/* Stretched over the card, so a click anywhere opens the site page. */}
           <Link
-            href={`/lugar/${place.slug}`}
+            href={placePath(place.slug)}
             prefetch={false}
             className="after:absolute after:inset-0 focus-visible:outline-none"
           >

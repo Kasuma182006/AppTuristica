@@ -10,6 +10,7 @@ import {
 } from "maplibre-gl";
 import type { GeoJSONSource, MapLayerMouseEvent } from "maplibre-gl";
 import { useEffect, useRef, useState } from "react";
+import { placePath } from "@/lib/routes";
 import type { PlacePoint } from "@/modules/places/types";
 import {
   boundsOf,
@@ -50,7 +51,7 @@ function summary(sites: MapPointProperties[], more: number): HTMLElement {
   for (const site of sites) {
     const item = document.createElement("li");
     const link = document.createElement("a");
-    link.href = `/lugar/${site.slug}`;
+    link.href = placePath(site.slug);
     link.textContent = site.name;
     link.className = "font-semibold text-[#1f6f4a] underline";
     const meta = document.createElement("p");

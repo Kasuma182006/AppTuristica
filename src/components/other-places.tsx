@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { connection } from "next/server";
 import { PAGE_DATA_DEADLINE_MS, withDeadline } from "@/lib/deadline";
+import { municipalityPath, placePath } from "@/lib/routes";
 import { getOtherPlaces } from "@/modules/places/service";
 import type { PlaceDetail } from "@/modules/places/types";
-import { EXPLORE_PATH } from "./filter-url";
 import { PlaceTypeImage } from "./place-type-image";
 
 const numberFormat = new Intl.NumberFormat("es-CO");
@@ -35,7 +35,7 @@ export async function OtherPlaces({
         {places.map((other) => (
           <li key={other.slug}>
             <Link
-              href={`/lugar/${other.slug}`}
+              href={placePath(other.slug)}
               prefetch={false}
               className="flex min-h-16 items-center gap-3 rounded-xl border border-border bg-surface p-2 pr-4 hover:border-primary"
             >
@@ -51,10 +51,9 @@ export async function OtherPlaces({
           </li>
         ))}
       </ul>
-      {/* Until the municipality page exists (HU-70), its sites in the search. */}
       <p>
         <Link
-          href={`${EXPLORE_PATH}?lugar=${encodeURIComponent(municipality.slug)}`}
+          href={municipalityPath(municipality.slug)}
           prefetch={false}
           className="inline-flex min-h-11 items-center text-primary underline underline-offset-4"
         >
