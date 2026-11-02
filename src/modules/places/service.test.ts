@@ -1,12 +1,20 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Catalogs } from "@/modules/catalogs/types";
-import type { PhotoRow, PlaceDetailRow, PlacePointRow, PlaceSummaryRow } from "./repository";
+import type {
+  PhotoRow,
+  PlaceDetailRow,
+  PlacePointRow,
+  PlaceSummaryRow,
+  RelatedPlaceRow,
+} from "./repository";
 import type { PlaceFilters, PlaceQuery } from "./types";
 
 const findPlaces = vi.fn<() => Promise<{ rows: PlaceSummaryRow[]; total: number }>>();
 const findPlaceBySlug = vi.fn<(slug: string) => Promise<PlaceDetailRow | undefined>>();
 const countPlaces = vi.fn<(filters: PlaceFilters) => Promise<number>>();
 const findPlacePoints = vi.fn<() => Promise<PlacePointRow[]>>();
+const findOtherPlacesInMunicipality =
+  vi.fn<(municipality: string, excluded: string, limit: number) => Promise<RelatedPlaceRow[]>>();
 const catalogs: Catalogs = {
   municipalities: [{ slug: "dagua", name: "Dagua" }],
   placeTypes: [{ slug: "cascada", name: "Cascada" }],
@@ -20,10 +28,17 @@ vi.mock("./repository", () => ({
   findPlaces: () => findPlaces(),
   findPlacePoints: () => findPlacePoints(),
   findPlaceBySlug: (_db: unknown, slug: string) => findPlaceBySlug(slug),
+  findOtherPlacesInMunicipality: (
+    _db: unknown,
+    municipality: string,
+    excluded: string,
+    limit: number,
+  ) => findOtherPlacesInMunicipality(municipality, excluded, limit),
 }));
 
 const {
   countWithoutEachFilter,
+  getOtherPlaces,
   getPlace,
   searchPlacePoints,
   searchPlaces,
@@ -417,5 +432,24 @@ describe("fragile sites (HU-39)", () => {
     // Wikipedia articles carry coordinates (HU-59); Wikidata's text reveals nothing.
     expect(detail.wikipediaUrl).toBeNull();
     expect(detail.wikidataDescription).toBe("río de Colombia");
+  });
+});
+
+describe("getOtherPlaces (HU-67)", () => {
+  it("asks for up to 6 other sites of the municipality and counts all of them", async () => {
+    const others: RelatedPlaceRow[] = [
+      { slug: "rio-pance-cali", name: "Río Pance", placeType: { slug: "rio", name: "Río" } },
+    ];
+    findOtherPlacesInMunicipality.mockResolvedValueOnce(others);
+    countPlaces.mockResolvedValueOnce(101);
+
+    const result = await getOtherPlaces({
+      slug: "rio-cali",
+      municipality: { slug: "cali", name: "Cali" },
+    });
+
+    expect(result).toEqual({ total: 101, places: others });
+    expect(findOtherPlacesInMunicipality).toHaveBeenCalledWith("cali", "rio-cali", 6);
+    expect(countPlaces).toHaveBeenCalledWith({ municipality: "cali", freeAccessOnly: false });
   });
 });

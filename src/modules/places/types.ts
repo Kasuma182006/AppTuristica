@@ -199,3 +199,21 @@ export interface PlaceDetail extends Omit<PlaceSummary, "restricted" | "photo"> 
   /** Last time ingest still found the site (RF-15), or its last change. ISO 8601. */
   updatedAt: string;
 }
+
+/** A site linked from another site page (HU-67). */
+export interface RelatedPlace {
+  slug: string;
+  name: string;
+  placeType: CatalogItem;
+}
+
+/** Other sites of a site's municipality (HU-67, RF-17). */
+export interface OtherPlaces {
+  /** Published sites of the municipality, the current one included. */
+  total: number;
+  /** The most complete first; ties in a new random order on each visit. */
+  places: RelatedPlace[];
+}
+
+/** Other sites a site page shows at most (docs/pendientes.md). */
+export const OTHER_PLACES_SHOWN = 6;
