@@ -10,6 +10,7 @@ import { PhotoGallery } from "@/components/photo-gallery";
 import { coordinatesText, placeFacts } from "@/components/place-facts";
 import { PlaceLocationMap } from "@/components/place-location-map";
 import { PlaceTypeImage } from "@/components/place-type-image";
+import { placeWarnings } from "@/components/place-warnings";
 import { PAGE_DATA_DEADLINE_MS, withDeadline } from "@/lib/deadline";
 import { getPlace } from "@/modules/places/service";
 
@@ -36,6 +37,7 @@ export async function generateMetadata({ params }: PageProps<"/lugar/[slug]">): 
 
 /**
  * HU-59 (RF-10): what the site is and what can be done there; HU-60 (RF-11): its photos;
+ * HU-63 (RF-13): warnings before going;
  * HU-61 and HU-62 (RF-12): where it is and how to get there.
  */
 async function PlaceContent({ params }: { params: PageProps<"/lugar/[slug]">["params"] }) {
@@ -46,6 +48,7 @@ async function PlaceContent({ params }: { params: PageProps<"/lugar/[slug]">["pa
   if (!place) notFound();
 
   const facts = placeFacts(place);
+  const warnings = placeWarnings(place);
   const { location } = place;
   const coordinates = coordinatesText(location);
   const directions = directionsFor(place);
@@ -59,6 +62,35 @@ async function PlaceContent({ params }: { params: PageProps<"/lugar/[slug]">["pa
         <p className="text-lg text-muted">
           {place.placeType.name} · {place.municipality.name}
         </p>
+        {warnings.length > 0 ? (
+          <div className="space-y-2 pt-1">
+            {/* The list below says the same for screen readers, with the explanations. */}
+            <ul aria-hidden="true" className="flex flex-wrap gap-2">
+              {warnings.map((warning) => (
+                <li
+                  key={warning.label}
+                  className={`rounded-full px-3 py-1 text-sm font-medium ${
+                    warning.tone === "warning"
+                      ? "bg-accent text-on-accent"
+                      : "border border-border text-fg"
+                  }`}
+                >
+                  {warning.tone === "warning" ? "⚠︎ " : ""}
+                  {warning.label}
+                </li>
+              ))}
+            </ul>
+            <h2 className="sr-only">Advertencias</h2>
+            <ul className="max-w-prose space-y-1 text-sm text-muted">
+              {warnings.map((warning) => (
+                <li key={warning.label}>
+                  <span className="font-medium text-fg">{warning.label}:</span>{" "}
+                  {warning.explanation}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </header>
 
       {place.photos.length > 0 ? (
