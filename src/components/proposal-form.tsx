@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { flushSync } from "react-dom";
 import type { Bounds, Catalogs } from "@/modules/catalogs/types";
+import { TERMS_PATH } from "@/lib/routes";
 import { COST_LABELS } from "@/modules/places/types";
 import {
   DESCRIPTION_MAX_LENGTH,
@@ -234,6 +235,36 @@ export function ProposalForm({
           mostraremos su punto exacto a nadie: se verá un área de unos 2 km, y &quot;Cómo
           llegar&quot; solo llevará al municipio.
         </p>
+      </div>
+
+      <div className="space-y-1">
+        <label className="flex items-start gap-3 py-2">
+          <input
+            id={fieldId("acceptedTerms")}
+            type="checkbox"
+            name="acceptedTerms"
+            required
+            aria-invalid={errors.acceptedTerms ? true : undefined}
+            aria-describedby={errors.acceptedTerms ? errorId("acceptedTerms") : undefined}
+            onChange={() => clearError("acceptedTerms")}
+            className="mt-0.5 size-5 shrink-0 accent-primary"
+          />
+          <span>
+            Acepto los {/* In another tab, so what was written in the form is not lost. */}
+            <a
+              href={TERMS_PATH}
+              target="_blank"
+              rel="noopener"
+              className="text-primary underline underline-offset-4"
+            >
+              Términos de uso
+              <span className="sr-only"> (se abre en otra pestaña)</span>
+            </a>{" "}
+            y que mi aporte se publique bajo la licencia abierta ODbL.{" "}
+            <span aria-hidden="true">*</span>
+          </span>
+        </label>
+        <FieldError field="acceptedTerms" message={errors.acceptedTerms} />
       </div>
 
       <div className="space-y-3">

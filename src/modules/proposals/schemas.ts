@@ -86,6 +86,8 @@ export const proposalFormSchema = z.object({
     .transform((value): CostSlug | null => value || null),
   // Marked: the exact point is never shown (HU-77, CLAUDE.md).
   fragile: z.boolean(),
+  // Must be marked: without it the proposal is not sent (HU-78).
+  acceptedTerms: z.literal(true, "Acepta los términos de uso para poder enviar tu propuesta."),
 });
 
 export type ProposalFormValues = z.infer<typeof proposalFormSchema>;
@@ -106,6 +108,7 @@ export const PROPOSAL_FIELDS = [
   "description",
   "cost",
   "fragile",
+  "acceptedTerms",
 ] as const satisfies readonly ProposalField[];
 
 /** Reads the form as sent by the browser; a field that is missing counts as empty. */
@@ -125,6 +128,7 @@ export function proposalFormValues(data: FormData): Record<ProposalField, unknow
     cost: text("cost"),
     // A checkbox is only sent when it is marked.
     fragile: data.has("fragile"),
+    acceptedTerms: data.has("acceptedTerms"),
   };
 }
 
