@@ -18,6 +18,7 @@ const valid = {
   latitude: "3.45123",
   longitude: "-76.53201",
   description: "Pozo de agua fría rodeado de bosque, a media hora de la vereda.",
+  cost: "gratis",
 };
 
 const errorsFor = (changes: object) => {
@@ -37,6 +38,19 @@ describe("validateProposalForm", () => {
     expect(validateProposalForm({ ...valid, activities: [] }).success).toBe(true);
   });
 
+  it.each([
+    ["gratis", "gratis"],
+    ["pago", "pago"],
+    ["", null],
+  ])("takes the cost %j as %j", (cost, saved) => {
+    const result = validateProposalForm({ ...valid, cost });
+    expect(result.success && result.values.cost).toBe(saved);
+  });
+
+  it("rejects a cost that is not an option", () => {
+    expect(errorsFor({ cost: "barato" }).cost).toBe("Elige una opción de costo de entrada.");
+  });
+
   it("requires every other field, each with its message", () => {
     const empty = {
       placeName: "",
@@ -46,6 +60,7 @@ describe("validateProposalForm", () => {
       latitude: "",
       longitude: "",
       description: "",
+      cost: "",
     };
     expect(validateProposalForm(empty)).toEqual({
       success: false,
@@ -150,6 +165,7 @@ describe("proposalFormValues", () => {
     data.set("latitude", "3.45");
     data.set("longitude", "-76.5");
     data.set("description", "Pozo de agua fría.");
+    data.set("cost", "pago");
 
     expect(proposalFormValues(data)).toEqual({
       placeName: "Charco",
@@ -159,6 +175,7 @@ describe("proposalFormValues", () => {
       latitude: "3.45",
       longitude: "-76.5",
       description: "Pozo de agua fría.",
+      cost: "pago",
     });
   });
 
@@ -171,6 +188,7 @@ describe("proposalFormValues", () => {
       latitude: "",
       longitude: "",
       description: "",
+      cost: "",
     });
   });
 });

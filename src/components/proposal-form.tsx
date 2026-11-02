@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { flushSync } from "react-dom";
 import type { Bounds, Catalogs } from "@/modules/catalogs/types";
+import { COST_LABELS } from "@/modules/places/types";
 import {
   DESCRIPTION_MAX_LENGTH,
   DESCRIPTION_MIN_LENGTH,
@@ -21,6 +22,13 @@ import {
   fieldId,
 } from "./proposal-field";
 import { ProposalLocationField } from "./proposal-location-field";
+
+/** "No sé" goes first and chosen: not knowing is the usual case, and it changes nothing. */
+const COST_OPTIONS = [
+  { value: "", label: "No sé" },
+  { value: "gratis", label: COST_LABELS.gratis },
+  { value: "pago", label: COST_LABELS.pago },
+];
 
 interface Props extends Pick<Catalogs, "placeTypes" | "activities" | "municipalities"> {
   /** The area of each municipality, by slug, to move the map there. */
@@ -187,6 +195,28 @@ export function ProposalForm({
         </p>
         <FieldError field="description" message={errors.description} />
       </div>
+
+      <fieldset className="space-y-2">
+        <legend className="font-medium">Costo de entrada (opcional)</legend>
+        <ul className="grid gap-x-4 sm:grid-cols-3">
+          {COST_OPTIONS.map((option) => (
+            <li key={option.value}>
+              <label className="flex min-h-11 items-center gap-3">
+                <input
+                  type="radio"
+                  name="cost"
+                  value={option.value}
+                  defaultChecked={option.value === ""}
+                  onChange={() => clearError("cost")}
+                  className="size-5 shrink-0 accent-primary"
+                />
+                {option.label}
+              </label>
+            </li>
+          ))}
+        </ul>
+        <FieldError field="cost" message={errors.cost} />
+      </fieldset>
 
       <div className="space-y-3">
         <button

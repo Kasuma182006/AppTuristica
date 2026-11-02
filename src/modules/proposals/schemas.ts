@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { CostSlug } from "@/modules/places/types";
 
 export const PLACE_NAME_MIN_LENGTH = 3;
 export const PLACE_NAME_MAX_LENGTH = 100;
@@ -79,6 +80,10 @@ export const proposalFormSchema = z.object({
       DESCRIPTION_MAX_LENGTH,
       `La descripción puede tener hasta ${DESCRIPTION_MAX_LENGTH} caracteres.`,
     ),
+  // Empty is "No sé": the site is saved with no cost, as if the field did not exist (HU-76).
+  cost: z
+    .enum(["gratis", "pago", ""], "Elige una opción de costo de entrada.")
+    .transform((value): CostSlug | null => value || null),
 });
 
 export type ProposalFormValues = z.infer<typeof proposalFormSchema>;
@@ -97,6 +102,7 @@ export const PROPOSAL_FIELDS = [
   "latitude",
   "longitude",
   "description",
+  "cost",
 ] as const satisfies readonly ProposalField[];
 
 /** Reads the form as sent by the browser; a field that is missing counts as empty. */
@@ -113,6 +119,7 @@ export function proposalFormValues(data: FormData): Record<ProposalField, unknow
     latitude: text("latitude"),
     longitude: text("longitude"),
     description: text("description"),
+    cost: text("cost"),
   };
 }
 
