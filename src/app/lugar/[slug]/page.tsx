@@ -11,6 +11,7 @@ import { coordinatesText, placeFacts } from "@/components/place-facts";
 import { PlaceLocationMap } from "@/components/place-location-map";
 import { PlaceTypeImage } from "@/components/place-type-image";
 import { placeWarnings } from "@/components/place-warnings";
+import { VisitNotices } from "@/components/visit-notices";
 import { PAGE_DATA_DEADLINE_MS, withDeadline } from "@/lib/deadline";
 import { getPlace } from "@/modules/places/service";
 
@@ -38,7 +39,7 @@ export async function generateMetadata({ params }: PageProps<"/lugar/[slug]">): 
 /**
  * HU-59 (RF-10): what the site is and what can be done there; HU-60 (RF-11): its photos;
  * HU-63 (RF-13): warnings before going;
- * HU-61 and HU-62 (RF-12): where it is and how to get there.
+ * HU-61 and HU-62 (RF-12): where it is and how to get there; HU-64 (RF-14): fixed notices.
  */
 async function PlaceContent({ params }: { params: PageProps<"/lugar/[slug]">["params"] }) {
   await connection();
@@ -224,6 +225,8 @@ async function PlaceContent({ params }: { params: PageProps<"/lugar/[slug]">["pa
           ) : null}
         </div>
       </section>
+
+      <VisitNotices municipality={place.municipality.name} />
     </article>
   );
 }
