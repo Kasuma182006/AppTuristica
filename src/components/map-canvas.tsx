@@ -32,7 +32,6 @@ const AREAS_LAYER = "places-areas";
 // The light map style keeps its colors in dark mode too: the light theme's primary and accent.
 const POINT_COLOR = "#1f6f4a";
 const AREA_COLOR = "#c9772b";
-const FIT = { padding: 48, maxZoom: 13, duration: 0 } as const;
 
 /** MapLibre draws with WebGL; old devices or disabled graphics cannot show the map. */
 function canDrawMaps(): boolean {
@@ -75,17 +74,39 @@ function summary(sites: MapPointProperties[], more: number): HTMLElement {
   return list;
 }
 
+interface Props {
+  points: PlacePoint[];
+  /** Names the map region for screen readers. */
+  label: string;
+  /** A click or tap on a site shows its summary with a link (the results map). */
+  summaries?: boolean;
+  /** Closest first view: one site alone would otherwise fill the screen. */
+  maxZoom?: number;
+  /** What to do instead when the browser cannot draw maps. */
+  unsupportedHint: string;
+  /** Size of the map box. */
+  className: string;
+}
+
 /**
- * The results on a MapLibre map with OpenFreeMap tiles (HU-57, HU-58): exact sites as green
- * points, fragile ones as an amber area of their real approximate radius. A click or tap shows
- * a summary with links. Loaded only in the map view (see PlacesMap).
+ * Sites on a MapLibre map with OpenFreeMap tiles (HU-57, HU-58, HU-61): exact sites as green
+ * points, fragile ones as an amber area of their real approximate radius. Loaded only when
+ * shown (see PlacesMap and PlaceLocationMap).
  */
-export default function MapCanvas({ points }: { points: PlacePoint[] }) {
+export default function MapCanvas({
+  points,
+  label,
+  summaries = false,
+  maxZoom = 13,
+  unsupportedHint,
+  className,
+}: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const pointsRef = useRef(points);
   // Only rendered in the browser (see PlacesMap), so the check can run here.
   const [supported] = useState(canDrawMaps);
+  const fitRef = useRef({ padding: 48, maxZoom, duration: 0 });
 
   useEffect(() => {
     if (!supported || !containerRef.current) return;
@@ -93,7 +114,7 @@ export default function MapCanvas({ points }: { points: PlacePoint[] }) {
       container: containerRef.current,
       style: MAP_STYLE_URL,
       bounds: boundsOf(pointsRef.current),
-      fitBoundsOptions: FIT,
+      fitBoundsOptions: fitRef.current,
       locale: MAP_LOCALE,
       attributionControl: false,
       // One finger scrolls the page on phones; the wheel scrolls it on computers.
@@ -143,10 +164,12 @@ export default function MapCanvas({ points }: { points: PlacePoint[] }) {
       if (shown.length === 0) return;
       popup.setLngLat(event.lngLat).setDOMContent(summary(shown, more)).addTo(map);
     };
-    for (const layer of [POINTS_LAYER, AREAS_LAYER]) {
-      map.on("click", layer, showSummary);
-      map.on("mouseenter", layer, () => (map.getCanvas().style.cursor = "pointer"));
-      map.on("mouseleave", layer, () => (map.getCanvas().style.cursor = ""));
+    if (summaries) {
+      for (const layer of [POINTS_LAYER, AREAS_LAYER]) {
+        map.on("click", layer, showSummary);
+        map.on("mouseenter", layer, () => (map.getCanvas().style.cursor = "pointer"));
+        map.on("mouseleave", layer, () => (map.getCanvas().style.cursor = ""));
+      }
     }
 
     mapRef.current = map;
@@ -155,7 +178,7 @@ export default function MapCanvas({ points }: { points: PlacePoint[] }) {
       map.remove();
       mapRef.current = null;
     };
-  }, [supported]);
+  }, [supported, summaries]);
 
   // New filters: same map, new points and view.
   useEffect(() => {
@@ -164,13 +187,13 @@ export default function MapCanvas({ points }: { points: PlacePoint[] }) {
     const source = map?.getSource<GeoJSONSource>(SOURCE_ID);
     if (!map || !source) return;
     source.setData(toFeatureCollection(points));
-    map.fitBounds(boundsOf(points), FIT);
+    map.fitBounds(boundsOf(points), fitRef.current);
   }, [points]);
 
   if (!supported) {
     return (
       <p role="alert" className="rounded-xl border border-border bg-surface p-4 text-muted">
-        Tu navegador no puede mostrar el mapa. Usa la vista de lista.
+        Tu navegador no puede mostrar el mapa. {unsupportedHint}
       </p>
     );
   }
@@ -179,8 +202,8 @@ export default function MapCanvas({ points }: { points: PlacePoint[] }) {
     <div
       ref={containerRef}
       role="region"
-      aria-label="Mapa de resultados"
-      className="h-[70vh] min-h-96 w-full overflow-hidden rounded-xl border border-border lg:h-[36rem]"
+      aria-label={label}
+      className={`w-full overflow-hidden rounded-xl border border-border ${className}`}
     />
   );
 }

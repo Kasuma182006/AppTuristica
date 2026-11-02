@@ -1,4 +1,9 @@
-import { COST_LABELS, DIFFICULTY_LABELS, type PlaceDetail } from "@/modules/places/types";
+import {
+  COST_LABELS,
+  DIFFICULTY_LABELS,
+  type PlaceDetail,
+  type PlaceLocation,
+} from "@/modules/places/types";
 
 export interface PlaceFact {
   label: string;
@@ -20,4 +25,13 @@ export function placeFacts(
   }
   if (place.cost) facts.push({ label: "Costo de entrada", value: COST_LABELS[place.cost] });
   return facts;
+}
+
+/**
+ * Coordinates to type into a GPS, e.g. "3.44923, -76.54523" (5 decimals ≈ 1 m). Null for
+ * fragile sites: their location is an approximation and must never read as a precise point.
+ */
+export function coordinatesText(location: PlaceLocation): string | null {
+  if (location.approximate) return null;
+  return `${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}`;
 }

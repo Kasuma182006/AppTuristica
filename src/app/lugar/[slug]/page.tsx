@@ -4,8 +4,10 @@ import { connection } from "next/server";
 import { cache, Suspense } from "react";
 import { BackToResults } from "@/components/last-search";
 import { LoadError } from "@/components/load-error";
+import { MapLegend } from "@/components/map-legend";
 import { PhotoGallery } from "@/components/photo-gallery";
-import { placeFacts } from "@/components/place-facts";
+import { coordinatesText, placeFacts } from "@/components/place-facts";
+import { PlaceLocationMap } from "@/components/place-location-map";
 import { PlaceTypeImage } from "@/components/place-type-image";
 import { PAGE_DATA_DEADLINE_MS, withDeadline } from "@/lib/deadline";
 import { getPlace } from "@/modules/places/service";
@@ -31,7 +33,10 @@ export async function generateMetadata({ params }: PageProps<"/lugar/[slug]">): 
   };
 }
 
-/** HU-59 (RF-10): what the site is and what can be done there; HU-60 (RF-11): its photos. */
+/**
+ * HU-59 (RF-10): what the site is and what can be done there; HU-60 (RF-11): its photos;
+ * HU-61 (RF-12): where it is.
+ */
 async function PlaceContent({ params }: { params: PageProps<"/lugar/[slug]">["params"] }) {
   await connection();
   const { slug } = await params;
@@ -40,6 +45,8 @@ async function PlaceContent({ params }: { params: PageProps<"/lugar/[slug]">["pa
   if (!place) notFound();
 
   const facts = placeFacts(place);
+  const { location } = place;
+  const coordinates = coordinatesText(location);
 
   return (
     <article className="space-y-6">
@@ -125,6 +132,33 @@ async function PlaceContent({ params }: { params: PageProps<"/lugar/[slug]">["pa
           </dl>
         </section>
       ) : null}
+
+      <section aria-labelledby="ubicacion" className="max-w-3xl space-y-2">
+        <h2 id="ubicacion" className="text-lg font-semibold">
+          Ubicación
+        </h2>
+        <PlaceLocationMap
+          point={{
+            slug: place.slug,
+            name: place.name,
+            municipality: place.municipality.name,
+            placeType: place.placeType,
+            // Already approximate for fragile sites (toPublicLocation).
+            location,
+          }}
+        />
+        <MapLegend exact={!location.approximate} approximate={location.approximate} />
+        {coordinates ? (
+          <p>
+            Coordenadas: <span className="font-mono">{coordinates}</span>
+          </p>
+        ) : (
+          <p className="text-muted">
+            Para proteger este sitio, el mapa muestra un área aproximada de 2 km y no su punto
+            exacto.
+          </p>
+        )}
+      </section>
     </article>
   );
 }
