@@ -293,6 +293,15 @@ export async function publishedPlaceExists(db: Db, slug: string): Promise<boolea
   return rows.length > 0;
 }
 
+/** The address and last change of every published site, for the sitemap (HU-72). */
+export async function findSitemapPlaces(db: Db): Promise<{ slug: string; updatedAt: Date }[]> {
+  return db
+    .select({ slug: places.slug, updatedAt: places.updatedAt })
+    .from(places)
+    .where(isPublished)
+    .orderBy(asc(places.slug));
+}
+
 /** A published site with its activities, photos and sources; undefined when missing or hidden. */
 export async function findPlaceBySlug(db: Db, slug: string): Promise<PlaceDetailRow | undefined> {
   const [row] = await db
