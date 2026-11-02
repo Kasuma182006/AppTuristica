@@ -1,8 +1,8 @@
 name: Ingest
 
 # Weekly import of open data into the shared database (HU-34), plus manual runs from the
-# Actions tab. Needs the DATABASE_URL_DIRECT secret; OVERPASS_URLS (repository variable) is
-# optional and overrides the default Overpass servers.
+# Actions tab. It also deletes expired reports (HU-85). Needs the DATABASE_URL_DIRECT secret;
+# OVERPASS_URLS (repository variable) is optional and overrides the default Overpass servers.
 on:
   schedule:
     # Mondays 03:17 UTC = Sundays 22:17 in Colombia: night in Europe, where the Overpass servers
@@ -64,3 +64,8 @@ jobs:
       - name: Agencies (RNT)
         if: ${{ !cancelled() && env.SOURCE != 'osm' }}
         run: npm run ingest -- --source=rnt
+
+      # Reports have a time limit (RNF-05), whatever happened to the imports above.
+      - name: Delete expired reports
+        if: ${{ !cancelled() }}
+        run: npm run purge-reports

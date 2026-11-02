@@ -1,7 +1,14 @@
 import { PgDialect } from "drizzle-orm/pg-core";
+import { drizzle } from "drizzle-orm/postgres-js";
 import { describe, expect, it, vi } from "vitest";
+import * as schema from "@db/schema";
 import type { Db } from "@/lib/db";
-import { saveReport, saveReportStatement, type NewReport } from "./repository";
+import {
+  deleteExpiredReports,
+  saveReport,
+  saveReportStatement,
+  type NewReport,
+} from "./repository";
 
 const HASH = "a".repeat(64);
 
@@ -48,6 +55,29 @@ describe("saveReportStatement", () => {
     const empty = new PgDialect().sqlToQuery(saveReportStatement({ ...report, comment: null }));
 
     expect(empty.params).toContain(null);
+  });
+});
+
+describe("deleteExpiredReports", () => {
+  const deletedWith = async (now: Date) => {
+    const queries: { sql: string; params: unknown[] }[] = [];
+    const db = drizzle.mock({
+      schema,
+      logger: { logQuery: (text, values) => queries.push({ sql: text, params: values }) },
+    });
+    await deleteExpiredReports(db as unknown as Db, now).catch(() => undefined);
+    return queries;
+  };
+
+  it("deletes the whole report once its time has passed, whatever its site", async () => {
+    const queries = await deletedWith(new Date("2026-11-02T12:00:00Z"));
+
+    expect(queries).toHaveLength(1);
+    expect(queries[0]?.sql).toMatch(
+      /^delete from "reports" where "reports"."created_at" <= [$]1 returning/,
+    );
+    // 180 days before.
+    expect(queries[0]?.params).toEqual(["2026-05-06T12:00:00.000Z"]);
   });
 });
 

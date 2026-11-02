@@ -72,6 +72,8 @@ versión corregida.
 
 ## Ingesta programada
 
+El mismo workflow, en su último paso, borra los reportes de más de 180 días (`npm run purge-reports`, HU-85).
+
 GitHub Actions (`.github/workflows/ingest.yml`) ejecuta `npm run ingest` cada semana (lunes 03:17
 UTC, domingo 10:17 p. m. en Colombia) y a mano desde la pestaña Actions → Ingest → Run workflow,
 eligiendo la fuente (`all`, `osm` o `rnt`). Cada fuente queda registrada en la tabla `ingest_runs`.
