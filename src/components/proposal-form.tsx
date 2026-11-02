@@ -27,7 +27,7 @@ import {
 } from "./proposal-field";
 import { ProposalConfirmation } from "./proposal-confirmation";
 import { ProposalLocationField } from "./proposal-location-field";
-import { ProposalTurnstile, type ProposalTurnstileHandle } from "./proposal-turnstile";
+import { TurnstileWidget, type TurnstileHandle } from "./turnstile-widget";
 
 const NOT_VERIFIED = "No pudimos verificar que eres una persona. Inténtalo de nuevo.";
 const NOT_SENT = "No pudimos enviar la propuesta. Revisa tu conexión e inténtalo de nuevo.";
@@ -64,7 +64,7 @@ function ProposalFields({
   const formRef = useRef<HTMLFormElement>(null);
   const duplicatesRef = useRef<HTMLHeadingElement>(null);
   const submitRef = useRef<HTMLButtonElement>(null);
-  const turnstileRef = useRef<ProposalTurnstileHandle>(null);
+  const turnstileRef = useRef<TurnstileHandle>(null);
 
   /** A change makes the last answer old: the next send checks again. */
   const clearResult = () => setDuplicates([]);
@@ -337,7 +337,7 @@ function ProposalFields({
         <FieldError field="acceptedTerms" message={errors.acceptedTerms} />
       </div>
 
-      <ProposalTurnstile ref={turnstileRef} />
+      <TurnstileWidget ref={turnstileRef} />
 
       <div className="space-y-3">
         {duplicates.length > 0 ? (

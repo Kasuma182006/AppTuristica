@@ -54,9 +54,10 @@ export default function TermsPage() {
           fuente y manteniendo la licencia.
         </p>
         <p>
-          No pedimos cuenta, nombre ni correo, así que no incluyas datos personales en tu aporte.
-          Para frenar el spam guardamos tu IP solo en forma cifrada, y el formulario usa Cloudflare
-          Turnstile, un servicio externo que comprueba que quien envía es una persona.
+          No pedimos cuenta, nombre ni correo, así que no incluyas datos personales en tus aportes
+          ni en tus reportes de errores. Para frenar el spam guardamos tu IP solo en forma cifrada,
+          y los formularios usan Cloudflare Turnstile, un servicio externo que comprueba que quien
+          envía es una persona.
         </p>
       </section>
 

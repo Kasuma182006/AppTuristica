@@ -29,16 +29,16 @@ const SCRIPT_URL = "https://challenges.cloudflare.com/turnstile/v0/api.js?render
 const UNAVAILABLE =
   "No pudimos cargar la verificación. Revisa si un bloqueador de contenido la impide y recarga la página.";
 
-export interface ProposalTurnstileHandle {
+export interface TurnstileHandle {
   /** A new token: each one works only once. */
   reset: () => void;
 }
 
 /**
- * Cloudflare Turnstile in the proposal form (HU-79). The widget leaves its token in a hidden field
- * inside the form, which the server checks. Its mode is set in Cloudflare's dashboard.
+ * Cloudflare Turnstile (HU-79), in the proposal and report forms. The widget leaves its token in a
+ * hidden field inside the form, which the server checks. Its mode is set in Cloudflare's dashboard.
  */
-export function ProposalTurnstile({ ref }: { ref: Ref<ProposalTurnstileHandle> }) {
+export function TurnstileWidget({ ref }: { ref: Ref<TurnstileHandle> }) {
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | undefined>(undefined);

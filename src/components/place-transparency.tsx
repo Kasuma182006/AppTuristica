@@ -1,6 +1,7 @@
 import type { PlaceDetail } from "@/modules/places/types";
 import { ConfidenceDots } from "./confidence-dots";
 import { confidenceLevel } from "./confidence-level";
+import { ReportError } from "./report-error";
 import { confidenceMissing, formatDate, groupSources, type SourceGroup } from "./transparency";
 
 const linkClass = "text-primary underline underline-offset-4";
@@ -104,6 +105,8 @@ export function PlaceTransparency({ place }: { place: PlaceDetail }) {
         </p>
         <p className="text-sm text-muted">Última vez que las fuentes confirmaron el sitio.</p>
       </div>
+
+      <ReportError placeSlug={place.slug} placeName={place.name} />
     </section>
   );
 }
