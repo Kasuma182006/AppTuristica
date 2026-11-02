@@ -4,6 +4,11 @@ export interface CatalogItem {
   name: string;
 }
 
+/** A municipality page (HU-70): the municipality and its department. */
+export interface Municipality extends CatalogItem {
+  department: string;
+}
+
 /** Values of the Lugar, Tipo and Actividad filters (RF-28), in display order. */
 export interface Catalogs {
   /** Alphabetical. */

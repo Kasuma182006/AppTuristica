@@ -17,7 +17,7 @@ export function municipalityFromSlug(
   return found;
 }
 
-/** The site slug in a /lugar/{slug} path, if it is one. */
+/** The site slug in a /sitio/{slug} path (or an old /lugar/{slug} one, HU-70), if it is one. */
 export function slugFromPath(path: string): string | undefined {
-  return /^\/lugar\/([^/?#]+)\/?$/.exec(path)?.[1];
+  return /^\/(?:sitio|lugar)\/([^/?#]+)\/?$/.exec(path)?.[1];
 }

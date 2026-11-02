@@ -1,7 +1,7 @@
-import { asc } from "drizzle-orm";
-import { activities, municipalities, placeTypes } from "@db/schema";
+import { asc, eq } from "drizzle-orm";
+import { activities, departments, municipalities, placeTypes } from "@db/schema";
 import type { Db } from "@/lib/db";
-import type { Catalogs } from "./types";
+import type { Catalogs, Municipality } from "./types";
 
 /** Every municipality, place type and activity, including those without published sites. */
 export async function findCatalogs(db: Db): Promise<Catalogs> {
@@ -25,4 +25,18 @@ export async function findCatalogs(db: Db): Promise<Catalogs> {
     placeTypes: placeTypeRows,
     activities: activityRows,
   };
+}
+
+/** A municipality by slug, with its department (HU-70); undefined when there is none. */
+export async function findMunicipalityBySlug(
+  db: Db,
+  slug: string,
+): Promise<Municipality | undefined> {
+  const [row] = await db
+    .select({ slug: municipalities.slug, name: municipalities.name, department: departments.name })
+    .from(municipalities)
+    .innerJoin(departments, eq(departments.id, municipalities.departmentId))
+    .where(eq(municipalities.slug, slug))
+    .limit(1);
+  return row;
 }

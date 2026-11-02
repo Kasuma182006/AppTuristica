@@ -1,3 +1,4 @@
+import { placePath } from "@/lib/routes";
 import { SITE_URL } from "@/lib/site";
 import type { PlaceDetail } from "@/modules/places/types";
 
@@ -15,7 +16,7 @@ export interface ShareData {
 export function shareDataFor(
   place: Pick<PlaceDetail, "slug" | "name" | "municipality">,
 ): ShareData {
-  const url = `${SITE_URL}/lugar/${place.slug}`;
+  const url = `${SITE_URL}${placePath(place.slug)}`;
   const text = `${place.name}, ${place.municipality.name}`;
   return {
     url,

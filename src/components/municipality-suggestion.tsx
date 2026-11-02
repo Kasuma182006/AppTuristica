@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import * as z from "zod/mini";
+import { municipalityPath } from "@/lib/routes";
 import type { CatalogItem } from "@/modules/catalogs/types";
-import { EXPLORE_PATH } from "./filter-url";
 import { municipalityFromSlug, slugFromPath } from "./municipality-from-slug";
 
 const catalogsResponse = z.object({
@@ -39,7 +39,7 @@ export function MunicipalitySuggestion() {
   if (!municipality) return null;
   return (
     <Link
-      href={`${EXPLORE_PATH}?lugar=${encodeURIComponent(municipality.slug)}`}
+      href={municipalityPath(municipality.slug)}
       prefetch={false}
       className="inline-flex h-11 items-center text-primary underline underline-offset-4"
     >

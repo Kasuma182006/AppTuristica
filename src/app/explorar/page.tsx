@@ -104,7 +104,11 @@ async function Results({ searchParams }: { searchParams: Promise<PageSearchParam
           </ResultsLink>
         </p>
       ) : null}
-      <PaginationBar page={page} totalPages={totalPages} params={params} />
+      <PaginationBar
+        page={page}
+        totalPages={totalPages}
+        hrefFor={(target) => pageHref(params, target)}
+      />
     </>
   );
 }

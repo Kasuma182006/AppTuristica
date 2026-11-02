@@ -31,12 +31,16 @@ describe("municipalityFromSlug", () => {
 
 describe("slugFromPath", () => {
   it("reads the slug of a site page path", () => {
+    expect(slugFromPath("/sitio/rio-pance-cali")).toBe("rio-pance-cali");
+    expect(slugFromPath("/sitio/rio-pance-cali/")).toBe("rio-pance-cali");
+  });
+
+  it("reads old /lugar addresses of site pages too", () => {
     expect(slugFromPath("/lugar/rio-pance-cali")).toBe("rio-pance-cali");
-    expect(slugFromPath("/lugar/rio-pance-cali/")).toBe("rio-pance-cali");
   });
 
   it("ignores other paths", () => {
     expect(slugFromPath("/explorar")).toBeUndefined();
-    expect(slugFromPath("/lugar/a/b")).toBeUndefined();
+    expect(slugFromPath("/sitio/a/b")).toBeUndefined();
   });
 });

@@ -116,9 +116,11 @@ al cambiar rutas, parámetros o campos, actualízala: `openapi.test.ts` falla si
 Mapa: `maplibre-gl` (versión fija) solo se carga en la vista de mapa (`src/components/places-map.tsx`, `next/dynamic`).
 Su worker se publica con `setWorkerUrl(new URL("maplibre-gl/dist/maplibre-gl-worker.mjs", import.meta.url))`
 (`map-canvas.tsx`); sin eso las teselas no cargan. Atribución "© OpenStreetMap contributors" en `map-data.ts`.
-Ficha `/lugar/{slug}`: hace streaming, así que su estado HTTP queda en 200 aunque llame `notFound()`. Para el
-404 real (HU-69), `src/proxy.ts` consulta `placeExists` y reescribe los sitios inexistentes u ocultos a
-`/sitio-no-encontrado` (estática, 404). `export const instant = false` no sirve para esto: solo apaga validaciones.
+Rutas (`src/lib/routes.ts`): ficha `/sitio/{slug}`, municipio `/lugar/{slug}` (HU-70). Ambas hacen streaming, así
+que su estado HTTP queda en 200 aunque llamen `notFound()`. Para el 404 real (HU-69), `src/proxy.ts` consulta la base
+y reescribe los sitios o municipios inexistentes (o sitios ocultos) a `/sitio-no-encontrado` (estática, 404); un
+`/lugar/{slug}` de sitio (dirección vieja) redirige con 308 a `/sitio/{slug}`, y si el slug es también de un municipio
+gana el municipio. `export const instant = false` no sirve para el 404: solo apaga validaciones.
 
 ## Fuera del MVP
 Cuentas, favoritos, reseñas, búsqueda por texto o semántica, filtros por distancia, filtro "Ideal para",
