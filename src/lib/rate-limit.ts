@@ -13,6 +13,13 @@ export interface RateLimit {
 /** HU-41: every route under /api/v1 together, per IP. */
 export const API_RATE_LIMIT: RateLimit = { scope: "api", limit: 60, windowMs: 60_000 };
 
+/** HU-82: proposals accepted per IP and day (UTC). Shared IPs share it, so it is not too low. */
+export const PROPOSAL_RATE_LIMIT: RateLimit = {
+  scope: "proposals",
+  limit: 5,
+  windowMs: 24 * 60 * 60 * 1000,
+};
+
 export interface RateLimitResult {
   allowed: boolean;
   /** Whole seconds until the window resets (at least 1). */
