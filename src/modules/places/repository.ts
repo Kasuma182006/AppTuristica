@@ -283,6 +283,16 @@ export async function findPlaces(
   };
 }
 
+/** Whether a published site has this slug: one indexed lookup, for the HTTP status (HU-69). */
+export async function publishedPlaceExists(db: Db, slug: string): Promise<boolean> {
+  const rows = await db
+    .select({ id: places.id })
+    .from(places)
+    .where(and(eq(places.slug, slug), isPublished))
+    .limit(1);
+  return rows.length > 0;
+}
+
 /** A published site with its activities, photos and sources; undefined when missing or hidden. */
 export async function findPlaceBySlug(db: Db, slug: string): Promise<PlaceDetailRow | undefined> {
   const [row] = await db
