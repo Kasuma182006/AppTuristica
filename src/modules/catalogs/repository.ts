@@ -1,7 +1,29 @@
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, sql } from "drizzle-orm";
 import { activities, departments, municipalities, placeTypes } from "@db/schema";
 import type { Db } from "@/lib/db";
-import type { Catalogs, Municipality } from "./types";
+import type { Bounds, Catalogs, Municipality } from "./types";
+
+/**
+ * The area of each municipality's largest piece of land, by slug (HU-75). Buenaventura also owns
+ * Malpelo island, ~500 km off the coast: its whole area would be mostly ocean.
+ */
+export async function findMunicipalityBounds(db: Db): Promise<Record<string, Bounds>> {
+  const rows = await db
+    .select({
+      slug: municipalities.slug,
+      bounds: sql<Bounds>`(
+        SELECT ARRAY[ST_XMin(largest.geom), ST_YMin(largest.geom), ST_XMax(largest.geom), ST_YMax(largest.geom)]
+        FROM (
+          SELECT part.geom
+          FROM ST_Dump(${municipalities.geom}) AS part
+          ORDER BY ST_Area(part.geom) DESC
+          LIMIT 1
+        ) AS largest
+      )`,
+    })
+    .from(municipalities);
+  return Object.fromEntries(rows.map(({ slug, bounds }) => [slug, bounds]));
+}
 
 /** Every municipality, place type and activity, including those without published sites. */
 export async function findCatalogs(db: Db): Promise<Catalogs> {

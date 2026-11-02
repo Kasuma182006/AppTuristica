@@ -9,6 +9,9 @@ export interface Municipality extends CatalogItem {
   department: string;
 }
 
+/** West, south, east, north, in degrees. */
+export type Bounds = [number, number, number, number];
+
 /** Values of the Lugar, Tipo and Actividad filters (RF-28), in display order. */
 export interface Catalogs {
   /** Alphabetical. */

@@ -6,8 +6,42 @@ export const DESCRIPTION_MIN_LENGTH = 20;
 export const DESCRIPTION_MAX_LENGTH = 500;
 
 /**
- * The proposal form (HU-74, RF-19). Runs in the browser, and the server will run it too (HU-80),
- * where it must also check that the chosen slugs exist. Spaces around a text do not count.
+ * A coordinate as a person writes it, with a decimal point or comma; null when it is not one.
+ * Whether it falls inside the Valle is for the server (HU-80), which has the real boundary.
+ */
+export function parseCoordinate(text: string): number | null {
+  const normalized = text.trim().replace(",", ".");
+  return /^-?[0-9]{1,3}([.][0-9]+)?$/.test(normalized) ? Number(normalized) : null;
+}
+
+const isLatitude = (value: number | null) => value !== null && Math.abs(value) <= 90;
+const isLongitude = (value: number | null) => value !== null && Math.abs(value) <= 180;
+
+/** The point in two texts, when both are valid; null while they are empty or half-written. */
+export function pointFromText(
+  latitude: string,
+  longitude: string,
+): { lat: number; lng: number } | null {
+  const lat = parseCoordinate(latitude);
+  const lng = parseCoordinate(longitude);
+  return lat !== null && lng !== null && isLatitude(lat) && isLongitude(lng) ? { lat, lng } : null;
+}
+
+const coordinate = (
+  emptyMessage: string,
+  isValid: (value: number | null) => boolean,
+  invalidMessage: string,
+) =>
+  z
+    .string()
+    .trim()
+    .min(1, emptyMessage)
+    .refine((text) => isValid(parseCoordinate(text)), invalidMessage)
+    .transform((text) => Number(text.replace(",", ".")));
+
+/**
+ * The proposal form (HU-74, HU-75, RF-19). Runs in the browser, and the server will run it too
+ * (HU-80), where it must also check that the chosen slugs exist. Spaces around a text do not count.
  */
 export const proposalFormSchema = z.object({
   // Not "name": browsers would offer to fill in the visitor's own name.
@@ -23,6 +57,16 @@ export const proposalFormSchema = z.object({
   placeType: z.string().min(1, "Elige el tipo de sitio."),
   activities: z.array(z.string()),
   municipality: z.string().min(1, "Elige el municipio."),
+  latitude: coordinate(
+    "Marca el sitio en el mapa o escribe su latitud.",
+    isLatitude,
+    "Escribe una latitud válida, por ejemplo 3.45123.",
+  ),
+  longitude: coordinate(
+    "Marca el sitio en el mapa o escribe su longitud.",
+    isLongitude,
+    "Escribe una longitud válida, por ejemplo -76.53201.",
+  ),
   description: z
     .string()
     .trim()
@@ -50,6 +94,8 @@ export const PROPOSAL_FIELDS = [
   "placeType",
   "activities",
   "municipality",
+  "latitude",
+  "longitude",
   "description",
 ] as const satisfies readonly ProposalField[];
 
@@ -64,6 +110,8 @@ export function proposalFormValues(data: FormData): Record<ProposalField, unknow
     placeType: text("placeType"),
     activities: data.getAll("activities"),
     municipality: text("municipality"),
+    latitude: text("latitude"),
+    longitude: text("longitude"),
     description: text("description"),
   };
 }
