@@ -1,6 +1,7 @@
 import { and, asc, count, desc, eq, exists, inArray, isNull, or, sql, type SQL } from "drizzle-orm";
 import {
   activities,
+  departments,
   municipalities,
   photos,
   placeActivities,
@@ -47,6 +48,8 @@ export interface PlaceSummaryRow extends PlaceRow {
 
 /** A site with everything its page shows (HU-38). */
 export interface PlaceDetailRow extends PlaceRow {
+  /** The municipality's department. */
+  department: string;
   description: string | null;
   wikidataDescription: string | null;
   wikipediaUrl: string | null;
@@ -272,6 +275,7 @@ export async function findPlaceBySlug(db: Db, slug: string): Promise<PlaceDetail
   const [row] = await db
     .select({
       ...SUMMARY_COLUMNS,
+      department: departments.name,
       description: places.description,
       wikidataDescription: places.wikidataDescription,
       wikipediaUrl: places.wikipediaUrl,
@@ -281,6 +285,7 @@ export async function findPlaceBySlug(db: Db, slug: string): Promise<PlaceDetail
     })
     .from(places)
     .innerJoin(municipalities, eq(municipalities.id, places.municipalityId))
+    .innerJoin(departments, eq(departments.id, municipalities.departmentId))
     .innerJoin(placeTypes, eq(placeTypes.id, places.placeTypeId))
     .where(and(eq(places.slug, slug), isPublished));
   if (!row) return undefined;

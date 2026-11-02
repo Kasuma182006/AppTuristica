@@ -150,6 +150,7 @@ const placeDetailExample: PlaceDetail = {
   origin: "abiertas",
   confidence: 75,
   location: { lat: 3.892485, lng: -76.501984, approximate: false, radiusM: null },
+  department: "Valle del Cauca",
   description: "Lago en Calima, Valle del Cauca.",
   wikidataDescription: "embalse de Colombia",
   wikipediaUrl: "https://es.wikipedia.org/wiki/Embalse_del_Calima",
@@ -485,6 +486,7 @@ export const openApiDocument: OpenApiDocument = {
         type: "object",
         required: [
           ...Object.keys(placeSummaryProperties),
+          "department",
           "description",
           "wikidataDescription",
           "wikipediaUrl",
@@ -499,6 +501,7 @@ export const openApiDocument: OpenApiDocument = {
         ],
         properties: {
           ...placeSummaryProperties,
+          department: { type: "string", description: "Departamento del municipio." },
           description: nullable("string", "Descripción del sitio."),
           wikidataDescription: nullable(
             "string",
