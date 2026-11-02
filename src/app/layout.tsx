@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { FirstVisitNotice } from "@/components/first-visit-notice";
+import { FIRST_VISIT_SCRIPT } from "@/components/first-visit";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { SITE_NAME } from "@/lib/page-metadata";
@@ -41,8 +43,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="es" className={`${geistSans.variable} ${geistMono.variable}`}>
+    // The script below marks <html> before React starts.
+    <html
+      lang="es"
+      className={`${geistSans.variable} ${geistMono.variable}`}
+      suppressHydrationWarning
+    >
       <body className="flex min-h-dvh flex-col">
+        <script dangerouslySetInnerHTML={{ __html: FIRST_VISIT_SCRIPT }} />
         <a
           href="#contenido"
           className="sr-only rounded-md bg-surface px-3 py-2 focus:not-sr-only focus:absolute focus:top-2 focus:left-2"
@@ -50,6 +58,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           Saltar al contenido
         </a>
         <SiteHeader />
+        <FirstVisitNotice />
         <main id="contenido" className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
           {children}
         </main>
