@@ -1,3 +1,6 @@
+/** The Terms of use (HU-78, HU-88). */
+export const TERMS_PATH = "/terminos";
+
 /** Address of a site page (HU-59), e.g. /sitio/embalse-de-calima. */
 export function placePath(slug: string): string {
   return `/sitio/${slug}`;

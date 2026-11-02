@@ -20,6 +20,7 @@ const valid = {
   description: "Pozo de agua fría rodeado de bosque, a media hora de la vereda.",
   cost: "gratis",
   fragile: false,
+  acceptedTerms: true,
 };
 
 const errorsFor = (changes: object) => {
@@ -53,6 +54,11 @@ describe("validateProposalForm", () => {
     expect(result.success && result.values.fragile).toBe(true);
   });
 
+  it("does not take a form without the terms accepted", () => {
+    expect(errorsFor({ acceptedTerms: false })).toHaveProperty("acceptedTerms");
+    expect(errorsFor({ acceptedTerms: "on" })).toHaveProperty("acceptedTerms");
+  });
+
   it("rejects a cost that is not an option", () => {
     expect(errorsFor({ cost: "barato" }).cost).toBe("Elige una opción de costo de entrada.");
   });
@@ -68,6 +74,7 @@ describe("validateProposalForm", () => {
       description: "",
       cost: "",
       fragile: false,
+      acceptedTerms: false,
     };
     expect(validateProposalForm(empty)).toEqual({
       success: false,
@@ -78,6 +85,7 @@ describe("validateProposalForm", () => {
         latitude: "Marca el sitio en el mapa o escribe su latitud.",
         longitude: "Marca el sitio en el mapa o escribe su longitud.",
         description: "Escribe una descripción del sitio.",
+        acceptedTerms: "Acepta los términos de uso para poder enviar tu propuesta.",
       },
     });
   });
@@ -174,6 +182,7 @@ describe("proposalFormValues", () => {
     data.set("description", "Pozo de agua fría.");
     data.set("cost", "pago");
     data.set("fragile", "on");
+    data.set("acceptedTerms", "on");
 
     expect(proposalFormValues(data)).toEqual({
       placeName: "Charco",
@@ -185,6 +194,7 @@ describe("proposalFormValues", () => {
       description: "Pozo de agua fría.",
       cost: "pago",
       fragile: true,
+      acceptedTerms: true,
     });
   });
 
@@ -199,6 +209,7 @@ describe("proposalFormValues", () => {
       description: "",
       cost: "",
       fragile: false,
+      acceptedTerms: false,
     });
   });
 });
