@@ -66,6 +66,17 @@ export function ProposalForm({
   };
 
   /** The error goes with the field, so the first one is focused only once it is on the page. */
+  const showErrors = (form: HTMLFormElement, found: ProposalErrors) => {
+    flushSync(() => {
+      setChecked(false);
+      setErrors(found);
+    });
+    const first = PROPOSAL_FIELDS.find((field) => found[field]);
+    const element = first ? form.elements.namedItem(first) : null;
+    const target = element instanceof RadioNodeList ? element[0] : element;
+    if (target instanceof HTMLElement) target.focus();
+  };
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (sending) return;
@@ -73,29 +84,27 @@ export function ProposalForm({
     const data = new FormData(form);
     const result = validateProposalForm(proposalFormValues(data));
     setSendError(null);
-    if (result.success) {
-      setErrors({});
-      setChecked(false);
-      startSending(async () => {
-        try {
-          const { status } = await submitProposal(data);
-          setChecked(status === "received");
-          if (status === "not-verified") setSendError(NOT_VERIFIED);
-        } catch {
-          setSendError(NOT_SENT);
-        }
-        // Cloudflare accepts each token once, whatever the result was.
-        turnstileRef.current?.reset();
-      });
+    if (!result.success) {
+      showErrors(form, result.errors);
       return;
     }
-    flushSync(() => {
-      setChecked(false);
-      setErrors(result.errors);
+    setErrors({});
+    setChecked(false);
+    startSending(async () => {
+      try {
+        const sent = await submitProposal(data);
+        if (sent.status === "received") setChecked(true);
+        if (sent.status === "not-verified") setSendError(NOT_VERIFIED);
+        if (sent.status === "invalid") {
+          if (sent.suggestedMunicipality) setMunicipality(sent.suggestedMunicipality);
+          showErrors(form, sent.errors);
+        }
+      } catch {
+        setSendError(NOT_SENT);
+      }
+      // Cloudflare accepts each token once, whatever the result was.
+      turnstileRef.current?.reset();
     });
-    const first = PROPOSAL_FIELDS.find((field) => result.errors[field]);
-    const element = first ? form.elements.namedItem(first) : null;
-    if (element instanceof HTMLElement) element.focus();
   };
 
   return (
@@ -157,6 +166,7 @@ export function ProposalForm({
             </li>
           ))}
         </ul>
+        <FieldError field="activities" message={errors.activities} />
       </fieldset>
 
       <div className="space-y-1">

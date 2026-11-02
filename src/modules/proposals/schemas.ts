@@ -56,7 +56,9 @@ export const proposalFormSchema = z.object({
     )
     .max(PLACE_NAME_MAX_LENGTH, `El nombre puede tener hasta ${PLACE_NAME_MAX_LENGTH} caracteres.`),
   placeType: z.string().min(1, "Elige el tipo de sitio."),
-  activities: z.array(z.string()),
+  activities: z
+    .array(z.string("Elige las actividades de la lista."))
+    .transform((slugs) => [...new Set(slugs)]),
   municipality: z.string().min(1, "Elige el municipio."),
   latitude: coordinate(
     "Marca el sitio en el mapa o escribe su latitud.",
