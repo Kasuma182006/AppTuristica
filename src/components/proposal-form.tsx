@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, useTransition, type FormEvent } from "react";
 import { flushSync } from "react-dom";
+import { submitProposal } from "@/app/proponer/actions";
 import type { Bounds, Catalogs } from "@/modules/catalogs/types";
 import { TERMS_PATH } from "@/lib/routes";
 import { COST_LABELS } from "@/modules/places/types";
@@ -23,6 +24,10 @@ import {
   fieldId,
 } from "./proposal-field";
 import { ProposalLocationField } from "./proposal-location-field";
+import { ProposalTurnstile, type ProposalTurnstileHandle } from "./proposal-turnstile";
+
+const NOT_VERIFIED = "No pudimos verificar que eres una persona. Inténtalo de nuevo.";
+const NOT_SENT = "No pudimos enviar la propuesta. Revisa tu conexión e inténtalo de nuevo.";
 
 /** "No sé" goes first and chosen: not knowing is the usual case, and it changes nothing. */
 const COST_OPTIONS = [
@@ -38,7 +43,8 @@ interface Props extends Pick<Catalogs, "placeTypes" | "activities" | "municipali
 
 /**
  * The proposal form (HU-74, RF-19), with what is needed to describe a site. Nothing is saved yet:
- * that arrives with HU-80 and HU-83, so for now the button only checks the fields.
+ * that arrives with HU-80 and HU-83, so for now sending only runs the checks. What is written
+ * stays in the form when sending fails.
  */
 export function ProposalForm({
   placeTypes,
@@ -50,6 +56,9 @@ export function ProposalForm({
   const [checked, setChecked] = useState(false);
   const [description, setDescription] = useState("");
   const [municipality, setMunicipality] = useState("");
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [sending, startSending] = useTransition();
+  const turnstileRef = useRef<ProposalTurnstileHandle>(null);
 
   const clearError = (field: ProposalField) => {
     setChecked(false);
@@ -59,11 +68,25 @@ export function ProposalForm({
   /** The error goes with the field, so the first one is focused only once it is on the page. */
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (sending) return;
     const form = event.currentTarget;
-    const result = validateProposalForm(proposalFormValues(new FormData(form)));
+    const data = new FormData(form);
+    const result = validateProposalForm(proposalFormValues(data));
+    setSendError(null);
     if (result.success) {
       setErrors({});
-      setChecked(true);
+      setChecked(false);
+      startSending(async () => {
+        try {
+          const { status } = await submitProposal(data);
+          setChecked(status === "received");
+          if (status === "not-verified") setSendError(NOT_VERIFIED);
+        } catch {
+          setSendError(NOT_SENT);
+        }
+        // Cloudflare accepts each token once, whatever the result was.
+        turnstileRef.current?.reset();
+      });
       return;
     }
     flushSync(() => {
@@ -267,18 +290,29 @@ export function ProposalForm({
         <FieldError field="acceptedTerms" message={errors.acceptedTerms} />
       </div>
 
+      <ProposalTurnstile ref={turnstileRef} />
+
       <div className="space-y-3">
         <button
           type="submit"
-          className="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-6 font-medium text-on-primary"
+          aria-disabled={sending || undefined}
+          className={`inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-6 font-medium text-on-primary ${
+            sending ? "cursor-wait opacity-70" : ""
+          }`}
         >
-          Enviar propuesta
+          {sending ? "Enviando…" : "Enviar propuesta"}
         </button>
         {/* On the page from the start, so screen readers announce the message when it appears. */}
         <p role="status" className="font-medium">
           {checked
             ? "Los datos están completos, pero aún no recibimos propuestas: no se guardó nada."
             : null}
+          {sendError ? (
+            <>
+              <span aria-hidden="true">⚠︎ </span>
+              {sendError}
+            </>
+          ) : null}
         </p>
       </div>
     </form>
