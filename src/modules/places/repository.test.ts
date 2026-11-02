@@ -11,6 +11,7 @@ import {
   countPlacesByOrigin,
   countPlacesByPlaceType,
   countRestrictedPlaces,
+  findOtherPlacesInMunicipality,
   findPlaceBySlug,
   findPlaces,
 } from "./repository";
@@ -131,6 +132,19 @@ describe("hidden sites never appear (HU-40)", () => {
     expect(queries).toHaveLength(1);
     expect(queries[0]?.params).toContain("rio-cali");
     expect(queries.every(requiresPublished)).toBe(true);
+  });
+
+  it("the other sites of the municipality (HU-67)", async () => {
+    const queries = await sentQueries((db) =>
+      findOtherPlacesInMunicipality(db, "cali", "rio-cali", 6),
+    );
+    const [query] = queries;
+
+    expect(queries).toHaveLength(1);
+    expect(queries.every(requiresPublished)).toBe(true);
+    expect(query?.params).toEqual(expect.arrayContaining(["cali", "rio-cali", 6]));
+    expect(query?.sql).toMatch(/"places"\."slug" <> \$\d+/);
+    expect(query?.sql).toMatch(/order by "places"\."confidence" desc, random\(\) limit \$\d+$/);
   });
 });
 

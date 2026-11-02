@@ -1,4 +1,17 @@
-import { and, asc, count, desc, eq, exists, inArray, isNull, or, sql, type SQL } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  exists,
+  inArray,
+  isNull,
+  ne,
+  or,
+  sql,
+  type SQL,
+} from "drizzle-orm";
 import {
   activities,
   departments,
@@ -311,6 +324,39 @@ export async function findPlaceBySlug(db: Db, slug: string): Promise<PlaceDetail
   if (!withActs) return undefined;
 
   return { ...withActs, photos: photoRows, sources: sourceRows };
+}
+
+/** A site linked from another site page (HU-67). */
+export interface RelatedPlaceRow {
+  slug: string;
+  name: string;
+  placeType: CatalogItem;
+}
+
+/**
+ * Up to `limit` other published sites of a municipality: the most complete first, ties in a new
+ * random order on each call, so the many sites with the base score take turns.
+ */
+export async function findOtherPlacesInMunicipality(
+  db: Db,
+  municipalitySlug: string,
+  excludedSlug: string,
+  limit: number,
+): Promise<RelatedPlaceRow[]> {
+  return db
+    .select({
+      slug: places.slug,
+      name: places.name,
+      placeType: { slug: placeTypes.slug, name: placeTypes.name },
+    })
+    .from(places)
+    .innerJoin(municipalities, eq(municipalities.id, places.municipalityId))
+    .innerJoin(placeTypes, eq(placeTypes.id, places.placeTypeId))
+    .where(
+      and(isPublished, eq(municipalities.slug, municipalitySlug), ne(places.slug, excludedSlug)),
+    )
+    .orderBy(desc(places.confidence), sql`random()`)
+    .limit(limit);
 }
 
 /** Published sites per municipality slug (HU-44); municipalities without sites are absent. */

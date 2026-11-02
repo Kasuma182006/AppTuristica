@@ -17,6 +17,7 @@ import {
   countPlacesByOrigin,
   countPlacesByPlaceType,
   countRestrictedPlaces,
+  findOtherPlacesInMunicipality,
   findPlaceBySlug,
   countPlaces,
   findPlacePoints,
@@ -33,6 +34,7 @@ import {
   DIFFICULTY_SLUGS,
   ORIGIN_LABELS,
   ORIGIN_SLUGS,
+  OTHER_PLACES_SHOWN,
   SOURCE_NAMES,
   type Cost,
   type CostSlug,
@@ -43,6 +45,7 @@ import {
   type Page,
   type FilterOption,
   type FilterOptions,
+  type OtherPlaces,
   type PlaceDetail,
   type PlaceFilters,
   type PlaceLocation,
@@ -239,4 +242,16 @@ export async function getFilterOptions(): Promise<FilterOptions> {
     })),
     restrictedCount: restricted,
   };
+}
+
+/** Other published sites of the site's municipality (HU-67); none when it is the only one. */
+export async function getOtherPlaces(
+  place: Pick<PlaceDetail, "slug" | "municipality">,
+): Promise<OtherPlaces> {
+  const db = getDb();
+  const [total, places] = await Promise.all([
+    countPlaces(db, { municipality: place.municipality.slug, freeAccessOnly: false }),
+    findOtherPlacesInMunicipality(db, place.municipality.slug, place.slug, OTHER_PLACES_SHOWN),
+  ]);
+  return { total, places };
 }
