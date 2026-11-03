@@ -23,6 +23,7 @@ export function VisitNotices({ municipality }: { municipality: string }) {
       <h2 id="antes-de-ir" className="text-lg font-semibold">
         Antes de ir
       </h2>
+      <p>Proyecto experimental: esta información puede tener errores. Confírmala antes de ir.</p>
 
       <div className={box}>
         <h3 className="font-semibold">No deje rastro</h3>

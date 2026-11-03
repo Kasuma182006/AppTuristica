@@ -2,6 +2,10 @@
 
 Web y API pública para encontrar lugares turísticos poco conocidos de Colombia. MVP: Valle del Cauca.
 
+Es un proyecto personal y experimental, sin ánimo de lucro. Sus datos vienen de fuentes abiertas y de
+la comunidad, y pueden tener errores: no reemplazan confirmar el acceso y el estado de un lugar antes
+de ir (ver `/aviso`).
+
 ## Requisitos
 
 - Node.js 24 o superior (ver `.nvmrc`)

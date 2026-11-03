@@ -60,6 +60,10 @@ export default function ProposePlacePage() {
         <p className="text-muted">
           Comparte un sitio poco conocido del Valle del Cauca para que otros lo descubran.
         </p>
+        <p className="text-muted">
+          Este es un proyecto experimental: tu sitio se publica de inmediato y sin revisión, marcado
+          como propuesto por la comunidad.
+        </p>
       </header>
 
       <LoadError what="el formulario">
