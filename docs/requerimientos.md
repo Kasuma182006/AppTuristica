@@ -53,7 +53,7 @@ El filtro geográfico se llama "Lugar" y agrupa municipios y ciudades.
 ## Legal, ambiental y seguridad
 - Solo fuentes abiertas; fotos solo de Commons con autor y licencia; enlaces a fuentes originales.
 - "© OpenStreetMap contributors" en todo mapa; datos de la API bajo ODbL.
-- Retiro de contenido por correo; el mantenedor elimina desde Supabase.
+- Retiro de contenido por correo; el mantenedor lo atiende desde Supabase (ver "Retiro de contenido" en el README: un sitio de fuentes abiertas se oculta, no se borra).
 - Propuestas: el colaborador acepta términos y cede licencia; sin fotos.
 - Sin datos personales (Ley 1581 de 2012); IP solo cifrada y temporal.
 - Sitios frágiles (p. ej. en áreas protegidas): ubicación aproximada ~2 km, sin coordenadas exactas en web ni API; avisos "No deje rastro".
