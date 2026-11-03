@@ -1,3 +1,6 @@
+import Link from "next/link";
+import { DISCLAIMER_PATH } from "@/lib/routes";
+
 /** Our own wording, not copied from the Leave No Trace program (CLAUDE.md: no third-party texts). */
 export const LEAVE_NO_TRACE = [
   "Llévate toda tu basura.",
@@ -54,6 +57,15 @@ export function VisitNotices({ municipality }: { municipality: string }) {
             123
           </a>
           .
+        </p>
+        <p>
+          <Link
+            href={DISCLAIMER_PATH}
+            prefetch={false}
+            className="inline-flex min-h-11 items-center text-primary underline underline-offset-4"
+          >
+            Lee el aviso de responsabilidad
+          </Link>
         </p>
       </div>
     </section>
