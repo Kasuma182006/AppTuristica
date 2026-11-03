@@ -53,6 +53,7 @@ Las páginas no consultan la base directamente: usan los services de `modules/`,
   Única excepción (HU-27): la descripción corta de Wikidata en español (CC0), guardada aparte
   (`places.wikidata_description`) y mostrada como de Wikidata, nunca como la descripción del sitio.
 - Atribución "© OpenStreetMap contributors" visible en todo mapa. Datos de la API bajo ODbL.
+- Las agencias (RNT) no van bajo ODbL: están bajo CC BY-SA 4.0 y piden atribuir al MinCIT, en la ficha y en `/fuentes`. No agregarlas a la API sin revisar esa licencia. Fuentes en `src/lib/data-sources.ts`.
 - Sin cuentas ni datos personales en el MVP.
 
 ## Buenas prácticas

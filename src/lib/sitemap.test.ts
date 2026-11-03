@@ -17,6 +17,7 @@ describe("sitemapEntries", () => {
       `${SITE_URL}/proponer`,
       `${SITE_URL}/terminos`,
       `${SITE_URL}/aviso`,
+      `${SITE_URL}/fuentes`,
       `${SITE_URL}/lugar/cali`,
       `${SITE_URL}/sitio/embalse-de-calima`,
     ]);
@@ -36,6 +37,6 @@ describe("sitemapEntries", () => {
   });
 
   it("still lists the fixed pages with no data", () => {
-    expect(sitemapEntries({ places: [], municipalitySlugs: [] })).toHaveLength(5);
+    expect(sitemapEntries({ places: [], municipalitySlugs: [] })).toHaveLength(6);
   });
 });

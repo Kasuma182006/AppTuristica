@@ -1,5 +1,6 @@
 import { connection } from "next/server";
 import { PAGE_DATA_DEADLINE_MS, withDeadline } from "@/lib/deadline";
+import { RNT_SOURCE } from "@/lib/data-sources";
 import { getMunicipalityAgencies } from "@/modules/agencies/service";
 import type { CatalogItem } from "@/modules/catalogs/types";
 import { formatPhone, phoneHref } from "./phone";
@@ -63,6 +64,30 @@ export async function MunicipalityAgencies({ municipality }: { municipality: Cat
       <p className="text-sm text-muted">
         Este listado no es una recomendación ni un patrocinio: son agencias inscritas en el RNT.
         Verifica su registro y sus condiciones antes de contratar.
+      </p>
+      {/* The credit this data's license asks for (HU-90). */}
+      <p className="text-sm text-muted">
+        Fuente:{" "}
+        <a
+          href={RNT_SOURCE.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary underline underline-offset-4"
+        >
+          {RNT_SOURCE.name}
+          <span className="sr-only"> (se abre en otra pestaña)</span>
+        </a>
+        , {RNT_SOURCE.author}, bajo licencia{" "}
+        <a
+          href={RNT_SOURCE.licenseUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary underline underline-offset-4"
+        >
+          {RNT_SOURCE.license}
+          <span className="sr-only"> (se abre en otra pestaña)</span>
+        </a>
+        .
       </p>
     </section>
   );

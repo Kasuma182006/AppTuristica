@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { SOURCES_PATH } from "@/lib/routes";
 import type { PlaceDetail } from "@/modules/places/types";
 import { ConfidenceDots } from "./confidence-dots";
 import { confidenceLevel } from "./confidence-level";
@@ -82,6 +84,15 @@ export function PlaceTransparency({ place }: { place: PlaceDetail }) {
             , bajo licencia ODbL.
           </p>
         ) : null}
+        <p>
+          <Link
+            href={SOURCES_PATH}
+            prefetch={false}
+            className="inline-flex min-h-11 items-center text-primary underline underline-offset-4"
+          >
+            Ver todas las fuentes y licencias
+          </Link>
+        </p>
       </div>
 
       <div className="space-y-1">

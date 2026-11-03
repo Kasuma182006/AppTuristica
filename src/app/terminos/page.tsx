@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalPageHeader, LegalSection, legalLinkClass } from "@/components/legal-page";
+import { RNT_SOURCE } from "@/lib/data-sources";
 import { DATA_LICENSE } from "@/lib/openapi";
 import { pageMetadata } from "@/lib/page-metadata";
-import { DISCLAIMER_PATH, TERMS_PATH } from "@/lib/routes";
+import { DISCLAIMER_PATH, SOURCES_PATH, TERMS_PATH } from "@/lib/routes";
 import { REPORT_RETENTION_DAYS } from "@/modules/reports/schemas";
 
 export const metadata: Metadata = pageMetadata({
@@ -95,13 +96,17 @@ export default function TermsPage() {
 
       <LegalSection id="api" title="Uso de los datos y de la API">
         <p>
-          Los datos del sitio y de la{" "}
+          Los datos de los sitios y de la{" "}
           <Link href="/api-docs" className={legalLinkClass}>
             API
           </Link>{" "}
           están bajo {DATA_LICENSE.identifier}: puedes reutilizarlos citando la fuente y manteniendo
-          la licencia. Los que vienen de OpenStreetMap llevan su atribución, y cada foto conserva su
-          propio autor y licencia.
+          la licencia. Las fotos y las agencias conservan la suya: cada foto muestra su autor y su
+          licencia, y las agencias vienen del RNT, bajo {RNT_SOURCE.license}. Lo explicamos en{" "}
+          <Link href={SOURCES_PATH} className={legalLinkClass}>
+            Fuentes y atribuciones
+          </Link>
+          .
         </p>
       </LegalSection>
 
