@@ -86,6 +86,21 @@ DELETE FROM reports WHERE place_id = (SELECT id FROM places WHERE slug = 'el-slu
 UPDATE places SET status = 'published' WHERE slug = 'el-slug';
 ```
 
+## Retiro de contenido
+
+Las solicitudes llegan al correo de `/contacto` (HU-91). Se atienden con SQL en Supabase:
+
+- **Sitio de OpenStreetMap o Wikidata: ocultarlo.** Si se borra, la siguiente ingesta lo crea otra vez;
+  a un sitio oculto la ingesta no lo reactiva.
+- **Sitio de la comunidad:** se puede borrar, porque ninguna fuente lo vuelve a crear.
+- **Foto o dato de una fuente abierta:** la ingesta lo trae de nuevo mientras siga en la fuente. Si no
+  se puede corregir allá, ocultar el sitio.
+
+```sql
+UPDATE places SET status = 'hidden' WHERE slug = 'el-slug';
+DELETE FROM places WHERE slug = 'el-slug' AND origin = 'community';
+```
+
 ## Ingesta programada
 
 El mismo workflow, en su último paso, borra los reportes de más de 180 días (`npm run purge-reports`, HU-85).

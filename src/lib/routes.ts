@@ -2,6 +2,7 @@
 export const TERMS_PATH = "/terminos";
 export const DISCLAIMER_PATH = "/aviso";
 export const SOURCES_PATH = "/fuentes";
+export const CONTACT_PATH = "/contacto";
 
 /** Address of a site page (HU-59), e.g. /sitio/embalse-de-calima. */
 export function placePath(slug: string): string {

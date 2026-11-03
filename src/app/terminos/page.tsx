@@ -4,7 +4,7 @@ import { LegalPageHeader, LegalSection, legalLinkClass } from "@/components/lega
 import { RNT_SOURCE } from "@/lib/data-sources";
 import { DATA_LICENSE } from "@/lib/openapi";
 import { pageMetadata } from "@/lib/page-metadata";
-import { DISCLAIMER_PATH, SOURCES_PATH, TERMS_PATH } from "@/lib/routes";
+import { CONTACT_PATH, DISCLAIMER_PATH, SOURCES_PATH, TERMS_PATH } from "@/lib/routes";
 import { REPORT_RETENTION_DAYS } from "@/modules/reports/schemas";
 
 export const metadata: Metadata = pageMetadata({
@@ -19,7 +19,7 @@ const LAST_UPDATED = { iso: "2026-11-02", text: "2 de noviembre de 2026" };
 
 /**
  * The Terms of use (HU-78, HU-88, RF-25): use of the site, what can be published, license of the
- * contributions and removal. The removal channel depends on HU-91.
+ * contributions and removal.
  */
 export default function TermsPage() {
   return (
@@ -113,7 +113,11 @@ export default function TermsPage() {
       <LegalSection id="retiro" title="Retiro de contenido">
         <p>
           Si un contenido es incorrecto o te afecta, o si un sitio se ocultó por error, puedes
-          pedirnos que lo revisemos. Pronto publicaremos aquí el canal para hacerlo.
+          pedirnos que lo revisemos: te explicamos cómo en{" "}
+          <Link href={CONTACT_PATH} className={legalLinkClass}>
+            Contacto para retiro de contenido
+          </Link>
+          .
         </p>
       </LegalSection>
 
