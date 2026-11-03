@@ -3,7 +3,15 @@ import { municipalityPath, placePath } from "./routes";
 import { SITE_URL } from "./site";
 
 /** Pages without data behind them. /explorar is noindex, so it stays out. */
-const STATIC_PATHS = ["/", "/api-docs", "/proponer", "/terminos", "/aviso", "/fuentes", "/contacto"];
+const STATIC_PATHS = [
+  "/",
+  "/api-docs",
+  "/proponer",
+  "/terminos",
+  "/aviso",
+  "/fuentes",
+  "/contacto",
+];
 
 export interface SitemapData {
   /** Published sites only; a hidden site must never reach the sitemap. */
