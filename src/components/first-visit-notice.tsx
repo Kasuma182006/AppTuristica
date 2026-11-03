@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useLayoutEffect } from "react";
-import { TERMS_PATH } from "@/lib/routes";
+import { DISCLAIMER_PATH } from "@/lib/routes";
 import { closeFirstVisitNotice, hideFirstVisitNoticeIfClosed } from "./first-visit";
 
 /**
@@ -35,11 +35,11 @@ export function FirstVisitNotice() {
             Entendido
           </button>
           <Link
-            href={TERMS_PATH}
+            href={DISCLAIMER_PATH}
             prefetch={false}
             className="inline-flex min-h-11 items-center text-sm text-primary underline underline-offset-4"
           >
-            Términos de uso
+            Aviso de responsabilidad
           </Link>
         </div>
       </div>

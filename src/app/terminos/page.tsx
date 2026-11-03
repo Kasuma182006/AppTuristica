@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { LegalPageHeader, LegalSection, legalLinkClass } from "@/components/legal-page";
 import { DATA_LICENSE } from "@/lib/openapi";
 import { pageMetadata } from "@/lib/page-metadata";
-import { TERMS_PATH } from "@/lib/routes";
+import { DISCLAIMER_PATH, TERMS_PATH } from "@/lib/routes";
 import { REPORT_RETENTION_DAYS } from "@/modules/reports/schemas";
 
 export const metadata: Metadata = pageMetadata({
@@ -13,21 +13,8 @@ export const metadata: Metadata = pageMetadata({
   path: TERMS_PATH,
 });
 
-const linkClass = "text-primary underline underline-offset-4";
-
 /** Change it whenever the text below changes. */
 const LAST_UPDATED = { iso: "2026-11-02", text: "2 de noviembre de 2026" };
-
-function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
-  return (
-    <section aria-labelledby={id} className="space-y-2">
-      <h2 id={id} className="text-lg font-semibold">
-        {title}
-      </h2>
-      {children}
-    </section>
-  );
-}
 
 /**
  * The Terms of use (HU-78, HU-88, RF-25): use of the site, what can be published, license of the
@@ -36,14 +23,9 @@ function Section({ id, title, children }: { id: string; title: string; children:
 export default function TermsPage() {
   return (
     <article className="max-w-prose space-y-6">
-      <header className="space-y-2">
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Términos de uso</h1>
-        <p className="text-muted">
-          Última actualización: <time dateTime={LAST_UPDATED.iso}>{LAST_UPDATED.text}</time>.
-        </p>
-      </header>
+      <LegalPageHeader title="Términos de uso" updated={LAST_UPDATED} />
 
-      <Section id="uso" title="Uso del sitio">
+      <LegalSection id="uso" title="Uso del sitio">
         <p>
           Este sitio es un proyecto personal, experimental y sin ánimo de lucro. Ayuda a encontrar
           lugares turísticos poco conocidos del Valle del Cauca, con datos abiertos y aportes de la
@@ -52,11 +34,15 @@ export default function TermsPage() {
         <p>
           La información puede estar incompleta o desactualizada: antes de ir, confirma el estado
           del lugar, el acceso y los permisos que pida. Cada persona visita estos lugares bajo su
-          propia responsabilidad.
+          propia responsabilidad: lee el{" "}
+          <Link href={DISCLAIMER_PATH} className={legalLinkClass}>
+            Aviso de responsabilidad
+          </Link>
+          .
         </p>
-      </Section>
+      </LegalSection>
 
-      <Section id="aportes" title="Tus aportes">
+      <LegalSection id="aportes" title="Tus aportes">
         <p>
           Al proponer un sitio, declaras que sus datos son ciertos hasta donde sabes y que
           escribiste la descripción con tus palabras, sin copiar textos de otras páginas. Tu aporte
@@ -64,15 +50,15 @@ export default function TermsPage() {
         </p>
         <p>
           Lo publicamos bajo la licencia{" "}
-          <a href={DATA_LICENSE.url} className={linkClass}>
+          <a href={DATA_LICENSE.url} className={legalLinkClass}>
             {DATA_LICENSE.name}
           </a>
           , la misma de los datos de nuestra API: cualquiera puede usarlo y compartirlo citando la
           fuente y manteniendo la licencia.
         </p>
-      </Section>
+      </LegalSection>
 
-      <Section id="no-permitido" title="Qué no se puede publicar">
+      <LegalSection id="no-permitido" title="Qué no se puede publicar">
         <ul className="list-disc space-y-1 pl-6">
           <li>Lugares inventados o información que sabes que es falsa.</li>
           <li>Contenido ofensivo, discriminatorio o que promueva actividades ilegales.</li>
@@ -83,17 +69,17 @@ export default function TermsPage() {
         <p>
           Podemos corregir o retirar cualquier aporte que incumpla estas reglas, sin previo aviso.
         </p>
-      </Section>
+      </LegalSection>
 
-      <Section id="reportes" title="Reportes de errores">
+      <LegalSection id="reportes" title="Reportes de errores">
         <p>
           Cualquier persona puede reportar un error desde la ficha de un sitio. Cuenta un reporte
           por conexión y sitio, y tres reportes de conexiones distintas ocultan el sitio de forma
           automática, sin revisión previa. No reportes un sitio si no hay un problema real.
         </p>
-      </Section>
+      </LegalSection>
 
-      <Section id="datos" title="Datos que guardamos">
+      <LegalSection id="datos" title="Datos que guardamos">
         <p>
           No pedimos cuenta, nombre ni correo, así que no incluyas datos personales en tus aportes
           ni en tus reportes. Para frenar el spam guardamos tu IP solo en forma cifrada, y los
@@ -105,33 +91,33 @@ export default function TermsPage() {
           Tu navegador recuerda que cerraste el aviso de primera visita y tu última búsqueda. Eso se
           queda en tu dispositivo: no nos llega.
         </p>
-      </Section>
+      </LegalSection>
 
-      <Section id="api" title="Uso de los datos y de la API">
+      <LegalSection id="api" title="Uso de los datos y de la API">
         <p>
           Los datos del sitio y de la{" "}
-          <Link href="/api-docs" className={linkClass}>
+          <Link href="/api-docs" className={legalLinkClass}>
             API
           </Link>{" "}
           están bajo {DATA_LICENSE.identifier}: puedes reutilizarlos citando la fuente y manteniendo
           la licencia. Los que vienen de OpenStreetMap llevan su atribución, y cada foto conserva su
           propio autor y licencia.
         </p>
-      </Section>
+      </LegalSection>
 
-      <Section id="retiro" title="Retiro de contenido">
+      <LegalSection id="retiro" title="Retiro de contenido">
         <p>
           Si un contenido es incorrecto o te afecta, o si un sitio se ocultó por error, puedes
           pedirnos que lo revisemos. Pronto publicaremos aquí el canal para hacerlo.
         </p>
-      </Section>
+      </LegalSection>
 
-      <Section id="cambios" title="Cambios y ley aplicable">
+      <LegalSection id="cambios" title="Cambios y ley aplicable">
         <p>
           Podemos cambiar estos términos: la fecha de arriba indica la última versión. Se rigen por
           las leyes de Colombia.
         </p>
-      </Section>
+      </LegalSection>
     </article>
   );
 }
